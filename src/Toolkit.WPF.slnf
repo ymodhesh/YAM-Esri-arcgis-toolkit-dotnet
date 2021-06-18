@@ -1,0 +1,12 @@
+{
+  "solution": {
+    "path": "Esri.ArcGISRuntime.Toolkit.sln",
+    "projects": [
+      "Samples\\Toolkit.SampleApp.WPF\\Toolkit.Samples.WPF.csproj",
+      "Toolkit.Preview\\Toolkit.Preview.WPF\\Esri.ArcGISRuntime.Toolkit.Preview.WPF.shproj",
+      "Toolkit.Preview\\Toolkit.Preview\\Esri.ArcGISRuntime.Toolkit.Preview.csproj",
+      "Toolkit\\Toolkit.WPF\\Esri.ArcGISRuntime.Toolkit.WPF.shproj",
+      "Toolkit\\Toolkit\\Esri.ArcGISRuntime.Toolkit.csproj"
+    ]
+  }
+}
