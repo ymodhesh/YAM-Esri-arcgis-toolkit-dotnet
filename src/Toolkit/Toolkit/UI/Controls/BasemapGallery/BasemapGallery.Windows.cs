@@ -30,7 +30,7 @@ using System.Windows;
 using System.Windows.Controls;
 #endif
 
-namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
+namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
     /// Displays a collection of images representing basemaps from ArcGIS Online, a user-defined Portal, or a user-defined collection.
@@ -48,16 +48,23 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
         /// </summary>
         public BasemapGallery()
         {
+            DefaultStyleKey = typeof(BasemapGallery);
             _dataSource = new BasemapGalleryDataSource();
+            DataContext = this;
         }
 
+        public BasemapGalleryDataSource Basemaps { get => _dataSource; }
+
         /// <summary>
-        /// Gets or sets a collection of basemaps to display. If set, will override basemaps read from the connected portal or ArcGIS Online.
+        /// <inheritdoc />
         /// </summary>
-        public ObservableCollection<BasemapGalleryItem> BasemapOverride
+#if NETFX_CORE
+        protected override void OnApplyTemplate()
+#else
+        public override void OnApplyTemplate()
+#endif
         {
-            get { return (ObservableCollection<BasemapGalleryItem>)GetValue(BasemapOverrideProperty); }
-            set { SetValue(BasemapOverrideProperty, value); }
+            base.OnApplyTemplate();
         }
 
         /// <summary>
@@ -114,6 +121,16 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
             set { SetValue(GridItemTemplateProperty, value); }
         }
 
+        private static void OnGeoViewPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((BasemapGallery)d)._dataSource.GeoView = e.NewValue as GeoView;
+        }
+
+        private static void OnPortalPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((BasemapGallery)d)._dataSource.Portal = e.NewValue as ArcGISPortal;
+        }
+
         /// <summary>
         /// Identifies the <see cref="ListItemContainerStyle"/> dependency property.
         /// </summary>
@@ -139,22 +156,16 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
             DependencyProperty.Register(nameof(GridItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), new PropertyMetadata(null));
 
         /// <summary>
-        /// Identifies the <see cref="BasemapOverride"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty BasemapOverrideProperty =
-            DependencyProperty.Register(nameof(BasemapOverride), typeof(ObservableCollection<BasemapGalleryItem>), typeof(BasemapGallery), new PropertyMetadata(null));
-
-        /// <summary>
         /// Identifies the <see cref="GeoView"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty GeoViewProperty =
-            DependencyProperty.Register(nameof(GeoView), typeof(GeoView), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(GeoView), typeof(GeoView), typeof(BasemapGallery), new PropertyMetadata(null, OnGeoViewPropertyChanged));
 
         /// <summary>
         /// Identifies the <see cref="Portal"/> dependency proeprty.
         /// </summary>
         public static readonly DependencyProperty PortalProperty =
-            DependencyProperty.Register(nameof(Portal), typeof(ArcGISPortal), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(Portal), typeof(ArcGISPortal), typeof(BasemapGallery), new PropertyMetadata(null, OnPortalPropertyChanged));
     }
 }
 #endif

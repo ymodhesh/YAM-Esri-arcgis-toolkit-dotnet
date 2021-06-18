@@ -14,7 +14,7 @@
 //  *   limitations under the License.
 //  ******************************************************************************/
 
-namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
+namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
     /// The view style of a basemap gallery.

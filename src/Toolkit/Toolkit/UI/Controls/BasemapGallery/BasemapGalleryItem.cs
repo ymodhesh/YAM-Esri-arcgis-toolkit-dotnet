@@ -15,18 +15,24 @@
 //  ******************************************************************************/
 
 using System;
+using System.ComponentModel;
+using System.Threading.Tasks;
+using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.UI;
 
-namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
+namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
     /// Encompasses an element in a basemap gallery.
     /// </summary>
-    public class BasemapGalleryItem
+    public class BasemapGalleryItem : INotifyPropertyChanged
     {
-        private readonly RuntimeImage _thumbnailOverride;
-        private readonly string _tooltipOverride;
+        private RuntimeImage _thumbnailOverride;
+        private string _tooltipOverride;
+        private string _nameOverride;
+        private bool _isLoading;
+        private bool _isValid;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -34,25 +40,81 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
         /// <param name="basemap">Basemap for this gallery item. Must be not null and loaded.</param>
         public BasemapGalleryItem(Basemap basemap)
         {
-            if (basemap?.LoadStatus != LoadStatus.Loaded)
-            {
-                throw new ArgumentException("Basemap must be non-null and loaded (LoadStatus == Loaded)");
-            }
-
             Basemap = basemap;
+            _ = LoadBasemapAsync();
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
-        /// </summary>
-        /// <param name="basemap">Basemap for this gallery item. Must be not null and loaded.</param>
-        /// <param name="thumbnail">Thumbnail to display for this gallery item. If not null, will take precedence over the basemap item's thumbnail.</param>
-        /// <param name="tooltip">Tooltip to display for this gallery item. If not null, will take precdence of the basemap item's description.</param>
-        public BasemapGalleryItem(Basemap basemap, RuntimeImage thumbnail, string tooltip)
-            : this(basemap)
+        private async Task LoadBasemapAsync()
         {
-            _thumbnailOverride = thumbnail;
-            _tooltipOverride = tooltip;
+            IsLoading = true;
+            try
+            {
+                if (Basemap != null && Basemap.LoadStatus != LoadStatus.Loaded)
+                {
+                    await Basemap.RetryLoadAsync();
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Thumbnail)));
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task LoadImage()
+        {
+            IsLoading = true;
+            try
+            {
+                if (Thumbnail != null && Thumbnail.LoadStatus != LoadStatus.Loaded)
+                {
+                    await Thumbnail.RetryLoadAsync();
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        internal async Task NotifySpatialReferenceChanged(SpatialReference sr)
+        {
+            if (sr == null)
+            {
+                IsValid = false;
+                return;
+            }
+            await LoadBasemapAsync();
+
+            var map = new Map(Basemap);
+            await map.LoadAsync();
+            if (map.LoadStatus != LoadStatus.Loaded)
+            {
+                IsValid = false;
+            }
+            IsValid = map.SpatialReference == sr;
+        }
+
+        public bool IsValid
+        {
+            get => _isValid; set
+            {
+                if (_isValid != value)
+                {
+                    _isValid = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsValid)));
+                }
+            }
         }
 
         /// <summary>
@@ -61,7 +123,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
         public Basemap Basemap { get; private set; }
 
         /// <summary>
-        /// Gets the thumbnail to display for this basemap item.
+        /// Gets or sets the thumbnail to display for this basemap item.
         /// </summary>
         public RuntimeImage Thumbnail
         {
@@ -74,10 +136,20 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
 
                 return Basemap?.Item?.Thumbnail;
             }
+
+            set
+            {
+                if (_thumbnailOverride != value)
+                {
+                    _thumbnailOverride = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Thumbnail)));
+                    _ = LoadImage();
+                }
+            }
         }
 
         /// <summary>
-        /// Gets the tooltip to display for this basemap item.
+        /// Gets or sets the tooltip to display for this basemap item.
         /// </summary>
         public string Tooltip
         {
@@ -90,14 +162,54 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls.BasemapGallery
 
                 return Basemap.Item.Description;
             }
+
+            set
+            {
+                if (_tooltipOverride != value)
+                {
+                    _tooltipOverride = value;
+                    PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
+                }
+            }
         }
 
         /// <summary>
-        /// Gets the name to display for this basemap item.
+        /// Gets or sets the name to display for this basemap item.
         /// </summary>
         public string Name
         {
-            get => Basemap.Name;
+            get
+            {
+                return _nameOverride ?? Basemap?.Name;
+            }
+
+            set
+            {
+                if (_nameOverride != value)
+                {
+                    _nameOverride = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                }
+            }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this gallery item is actively loading the basemap or image.
+        /// </summary>
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (_isLoading != value)
+                {
+                    _isLoading = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLoading)));
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

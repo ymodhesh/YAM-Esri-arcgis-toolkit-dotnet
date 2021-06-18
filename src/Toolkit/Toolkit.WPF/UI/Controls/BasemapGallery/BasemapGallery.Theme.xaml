@@ -1,0 +1,48 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls">
+    <Style TargetType="{x:Type controls:BasemapGallery}">
+        <Setter Property="GridItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Foreground="Red" Text="{Binding Name}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="ListItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Foreground="Blue" Text="{Binding Name}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:BasemapGallery}">
+                    <ListView
+                        x:Name="InnerListView"
+                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                        ItemTemplate="{TemplateBinding ListItemTemplate}"
+                        ItemsSource="{Binding Basemaps, Mode=OneWay}"
+                        SelectedItem="{Binding Basemaps.SelectedBasemap, Mode=TwoWay}" />
+                    <ControlTemplate.Resources>
+                        <ItemsPanelTemplate x:Key="GridTemplate">
+                            <UniformGrid Background="Red" Columns="3" />
+                        </ItemsPanelTemplate>
+                    </ControlTemplate.Resources>
+                    <ControlTemplate.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Width" Value="300" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="InnerListView" Property="ItemsPanel" Value="{StaticResource GridTemplate}" />
+                            <Setter TargetName="InnerListView" Property="ItemTemplate" Value="{Binding GridItemTemplate, RelativeSource={RelativeSource TemplatedParent}}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>
