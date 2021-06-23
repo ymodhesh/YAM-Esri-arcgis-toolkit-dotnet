@@ -15,16 +15,17 @@
 //  ******************************************************************************/
 
 #if !__IOS__ && !__ANDROID__
-using Esri.ArcGISRuntime.Portal;
-using Esri.ArcGISRuntime.UI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
+using Esri.ArcGISRuntime.Portal;
+using Esri.ArcGISRuntime.UI.Controls;
 #if NETFX_CORE
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Markup;
 #else
 using System.Windows;
 using System.Windows.Controls;
@@ -39,9 +40,16 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// If connected to a GeoView, changing the basemap selection will change the connected Map or Scene's basemap.
     /// Only basemaps whose spatial reference matches the map or scene's spatial reference can be selected for display.
     /// </remarks>
+    [TemplatePart(Name = "PART_InnerListView", Type = typeof(ListView))]
     public class BasemapGallery : Control
     {
+        private ListView _listViewFromTemplate;
         private readonly BasemapGalleryDataSource _dataSource;
+        private ItemsPanelTemplate _listTemplate;
+        private ItemsPanelTemplate _gridTemplate;
+
+        // Track currently applied style to avoid unnecessary re-styling of list view
+        private BasemapGalleryViewStyle _currentlyAppliedStyle = BasemapGalleryViewStyle.Automatic;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGallery"/> class.
@@ -51,8 +59,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             DefaultStyleKey = typeof(BasemapGallery);
             _dataSource = new BasemapGalleryDataSource();
             DataContext = this;
+            this.SizeChanged += BasemapGallery_SizeChanged;
         }
 
+
+        /// <summary>
+        /// Gets the data source for the gallery.
+        /// </summary>
         public BasemapGalleryDataSource Basemaps { get => _dataSource; }
 
         /// <summary>
@@ -65,6 +78,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 #endif
         {
             base.OnApplyTemplate();
+            _listViewFromTemplate = GetTemplateChild("PART_InnerListView") as ListView;
+            SetNewStyle(ActualWidth);
         }
 
         /// <summary>
@@ -121,6 +136,24 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             set { SetValue(GridItemTemplateProperty, value); }
         }
 
+        /// <summary>
+        /// Gets or sets the view style for the gallery.
+        /// </summary>
+        public BasemapGalleryViewStyle GalleryViewStyle
+        {
+            get { return (BasemapGalleryViewStyle)GetValue(GalleryViewStyleProperty); }
+            set { SetValue(GalleryViewStyleProperty, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the width threshold to use for deciding between grid and list views when <see cref="GalleryViewStyle"/> is <see cref="BasemapGalleryViewStyle.Automatic"/>.
+        /// </summary>
+        public double ViewStyleWidthThreshold
+        {
+            get { return (double)GetValue(ViewStyleWidthThresholdProperty); }
+            set { SetValue(ViewStyleWidthThresholdProperty, value); }
+        }
+
         private static void OnGeoViewPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((BasemapGallery)d)._dataSource.GeoView = e.NewValue as GeoView;
@@ -131,29 +164,41 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             ((BasemapGallery)d)._dataSource.Portal = e.NewValue as ArcGISPortal;
         }
 
+        private static void OnViewLayoutPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var gallery = (BasemapGallery)d;
+            gallery.SetNewStyle(gallery.ActualWidth);
+        }
+
+        private static void OnStyleOrTemplateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var gallery = (BasemapGallery)d;
+            gallery.UpdateListViewForStyle(gallery.GalleryViewStyle, true);
+        }
+
         /// <summary>
         /// Identifies the <see cref="ListItemContainerStyle"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ListItemContainerStyleProperty =
-            DependencyProperty.Register(nameof(ListItemContainerStyle), typeof(Style), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(ListItemContainerStyle), typeof(Style), typeof(BasemapGallery), new PropertyMetadata(null, OnStyleOrTemplateChanged));
 
         /// <summary>
         /// Identifies the <see cref="GridItemContainerStyle"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty GridItemContainerStyleProperty =
-            DependencyProperty.Register(nameof(GridItemContainerStyle), typeof(Style), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(GridItemContainerStyle), typeof(Style), typeof(BasemapGallery), new PropertyMetadata(null, OnStyleOrTemplateChanged));
 
         /// <summary>
         /// Identifies the <see cref="ListItemTemplate"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty ListItemTemplateProperty =
-            DependencyProperty.Register(nameof(ListItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(ListItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), new PropertyMetadata(null, OnStyleOrTemplateChanged));
 
         /// <summary>
         /// Identifies the <see cref="GridItemTemplate"/> dependency property.
         /// </summary>
         public static readonly DependencyProperty GridItemTemplateProperty =
-            DependencyProperty.Register(nameof(GridItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(GridItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), new PropertyMetadata(null, OnStyleOrTemplateChanged));
 
         /// <summary>
         /// Identifies the <see cref="GeoView"/> dependency property.
@@ -166,6 +211,94 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public static readonly DependencyProperty PortalProperty =
             DependencyProperty.Register(nameof(Portal), typeof(ArcGISPortal), typeof(BasemapGallery), new PropertyMetadata(null, OnPortalPropertyChanged));
+
+        /// <summary>
+        /// Identifies the <see cref="GalleryViewStyle"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty GalleryViewStyleProperty =
+            DependencyProperty.Register(nameof(GalleryViewStyle), typeof(BasemapGalleryViewStyle), typeof(BasemapGallery), new PropertyMetadata(BasemapGalleryViewStyle.Automatic, OnViewLayoutPropertyChanged));
+
+        /// <summary>
+        /// Identifies the <see cref="ViewStyleWidthThreshold"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty ViewStyleWidthThresholdProperty =
+            DependencyProperty.Register(nameof(ViewStyleWidthThreshold), typeof(double), typeof(BasemapGallery), new PropertyMetadata(440.0, OnViewLayoutPropertyChanged));
+
+        private void BasemapGallery_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            SetNewStyle(e.NewSize.Width);
+        }
+
+        private void SetNewStyle(double currentSize)
+        {
+            if (_listViewFromTemplate == null)
+            {
+                return;
+            }
+
+            if (GalleryViewStyle == BasemapGalleryViewStyle.Automatic)
+            {
+                UpdateListViewForStyle(currentSize >= ViewStyleWidthThreshold ? BasemapGalleryViewStyle.Grid : BasemapGalleryViewStyle.List);
+            }
+            else
+            {
+                UpdateListViewForStyle(GalleryViewStyle);
+            }
+        }
+
+        private void UpdateListViewForStyle(BasemapGalleryViewStyle style, bool forceReset = false)
+        {
+            if (_currentlyAppliedStyle == style && !forceReset)
+            {
+                return;
+            }
+
+            if (_listViewFromTemplate == null)
+            {
+                return;
+            }
+
+            if (style == BasemapGalleryViewStyle.List)
+            {
+                _listViewFromTemplate.ItemContainerStyle = ListItemContainerStyle;
+                _listViewFromTemplate.ItemTemplate = ListItemTemplate;
+                _listViewFromTemplate.ItemsPanel = _listTemplate = _listTemplate ?? GetItemsPanelTemplate(typeof(StackPanel));
+            }
+            else if (style == BasemapGalleryViewStyle.Grid)
+            {
+                _listViewFromTemplate.ItemContainerStyle = GridItemContainerStyle;
+                _listViewFromTemplate.ItemTemplate = GridItemTemplate;
+                _listViewFromTemplate.ItemsPanel = _gridTemplate = _gridTemplate ?? GetItemsPanelTemplate(typeof(WrapPanel));
+            }
+
+            _currentlyAppliedStyle = style;
+        }
+
+        #if NETFX_CORE
+        private class WrapPanel { }
+        #endif
+
+        private ItemsPanelTemplate GetItemsPanelTemplate(Type panelType)
+        {
+            #if !NETFX_CORE
+            return new ItemsPanelTemplate(new FrameworkElementFactory(panelType));
+            #else
+            if (panelType == typeof(StackPanel))
+            {
+                string xaml = @"<ItemsPanelTemplate   xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
+                                    <StackPanel />
+                    </ItemsPanelTemplate>";
+                return XamlReader.Load(xaml) as ItemsPanelTemplate;
+            }
+            else
+            {
+                string xaml = @"<ItemsPanelTemplate   xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
+                                    <WrapGrid />
+                    </ItemsPanelTemplate>";
+                return XamlReader.Load(xaml) as ItemsPanelTemplate;
+            }
+            #endif
+        }
     }
 }
 #endif

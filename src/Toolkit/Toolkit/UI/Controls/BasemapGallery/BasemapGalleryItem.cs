@@ -21,6 +21,13 @@ using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.UI;
 
+#if NETFX_CORE
+using Windows.UI.Xaml.Media;
+#elif NETFRAMEWORK || NETCOREAPP
+using System.Windows.Media;
+#elif XAMARIN
+#endif
+
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
@@ -29,6 +36,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public class BasemapGalleryItem : INotifyPropertyChanged
     {
         private RuntimeImage _thumbnailOverride;
+        #if NETFX_CORE || NETFRAMEWORK || NETCOREAPP
+        private ImageSource _thumbnailImageSource;
+        #endif
         private string _tooltipOverride;
         private string _nameOverride;
         private bool _isLoading;
@@ -54,7 +64,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     await Basemap.RetryLoadAsync();
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Thumbnail)));
+                    await LoadImage();
                 }
             }
             catch (Exception)
@@ -76,6 +86,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     await Thumbnail.RetryLoadAsync();
                 }
+
+                #if NETFRAMEWORK || NETFX_CORE || NETCOREAPP
+                if (Thumbnail != null)
+                {
+                    ThumbnailImageSource = await Thumbnail.ToImageSourceAsync();
+                }
+                #endif
             }
             catch (Exception)
             {
@@ -94,6 +111,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 IsValid = false;
                 return;
             }
+
             await LoadBasemapAsync();
 
             var map = new Map(Basemap);
@@ -102,9 +120,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 IsValid = false;
             }
+
             IsValid = map.SpatialReference == sr;
         }
 
+        /// <summary>
+        /// Gets whether this basemap is a valid selection.
+        /// </summary>
         public bool IsValid
         {
             get => _isValid; set
@@ -148,6 +170,18 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
+        #if NETCOREAPP || NETFX_CORE || NETFRAMEWORK
+        public ImageSource ThumbnailImageSource
+        {
+            get => _thumbnailImageSource;
+            private set
+            {
+                _thumbnailImageSource = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ThumbnailImageSource)));
+            }
+        }
+        #endif
+
         /// <summary>
         /// Gets or sets the tooltip to display for this basemap item.
         /// </summary>
@@ -160,7 +194,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return _tooltipOverride;
                 }
 
-                return Basemap.Item.Description;
+                return Basemap.Item.Snippet;
             }
 
             set
