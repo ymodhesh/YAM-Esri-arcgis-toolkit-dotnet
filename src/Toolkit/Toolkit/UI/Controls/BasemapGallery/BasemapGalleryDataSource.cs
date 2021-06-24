@@ -128,13 +128,27 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     _activeItem = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
 
-                    if (_activeItem?.Basemap != null && GeoView is MapView mv && mv.Map != null)
+                    if (_activeItem?.Basemap != null && GeoView is MapView mv)
                     {
-                        mv.Map.Basemap = _activeItem.Basemap;
+                        if (mv.Map == null)
+                        {
+                            mv.Map = new Map(_activeItem.Basemap);
+                        }
+                        else
+                        {
+                            mv.Map.Basemap = _activeItem.Basemap;
+                        }
                     }
-                    else if (_activeItem?.Basemap != null && GeoView is SceneView sv && sv.Scene != null)
+                    else if (_activeItem?.Basemap != null && GeoView is SceneView sv)
                     {
-                        sv.Scene.Basemap = _activeItem.Basemap;
+                        if (sv.Scene == null)
+                        {
+                            sv.Scene = new Scene(_activeItem.Basemap);
+                        }
+                        else
+                        {
+                            sv.Scene.Basemap = _activeItem.Basemap;
+                        }
                     }
                 }
             }
@@ -233,19 +247,19 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         IEnumerator IEnumerable.GetEnumerator() => _internalList?.GetEnumerator();
 
-        public int Add(object value)
+        int IList.Add(object value)
         {
             _internalList.Insert(0, (BasemapGalleryItem)value);
             return _internalList != null ? 0 : -1;
         }
 
-        public bool Contains(object value) => _internalList?.Contains((BasemapGalleryItem)value) ?? false;
+        bool IList.Contains(object value) => _internalList?.Contains((BasemapGalleryItem)value) ?? false;
 
-        public int IndexOf(object value) => _internalList?.IndexOf((BasemapGalleryItem)value) ?? -1;
+        int IList.IndexOf(object value) => _internalList?.IndexOf((BasemapGalleryItem)value) ?? -1;
 
-        public void Insert(int index, object value) => _internalList?.Insert(index, (BasemapGalleryItem)value);
+        void IList.Insert(int index, object value) => _internalList?.Insert(index, (BasemapGalleryItem)value);
 
-        public void Remove(object value) => _internalList?.Remove((BasemapGalleryItem)value);
+        void IList.Remove(object value) => _internalList?.Remove((BasemapGalleryItem)value);
 
         public void CopyTo(Array array, int index) => _internalList?.CopyTo((BasemapGalleryItem[])array, index);
     }

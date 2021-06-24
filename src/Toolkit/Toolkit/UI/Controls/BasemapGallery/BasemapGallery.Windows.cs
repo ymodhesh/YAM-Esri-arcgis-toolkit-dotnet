@@ -280,24 +280,24 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private ItemsPanelTemplate GetItemsPanelTemplate(Type panelType)
         {
-            #if !NETFX_CORE
+#if !NETFX_CORE
             return new ItemsPanelTemplate(new FrameworkElementFactory(panelType));
-            #else
+#else
             if (panelType == typeof(StackPanel))
             {
-                string xaml = @"<ItemsPanelTemplate   xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
-                                    <StackPanel />
-                    </ItemsPanelTemplate>";
+                string xaml = "<ItemsPanelTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>"
+                    + "<ItemsStackPanel />"
+                    + "</ItemsPanelTemplate>";
                 return XamlReader.Load(xaml) as ItemsPanelTemplate;
             }
             else
             {
-                string xaml = @"<ItemsPanelTemplate   xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>
-                                    <WrapGrid />
-                    </ItemsPanelTemplate>";
+                string xaml = "<ItemsPanelTemplate   xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'>"
+                                   + "<ItemsWrapGrid Orientation=\"Horizontal\" />"
+                    + "</ItemsPanelTemplate>";
                 return XamlReader.Load(xaml) as ItemsPanelTemplate;
             }
-            #endif
+#endif
         }
     }
 }
