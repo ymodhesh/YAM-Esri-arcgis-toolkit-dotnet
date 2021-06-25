@@ -39,30 +39,33 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// </summary>
     public class BasemapGalleryDataSource : IList<BasemapGalleryItem>, INotifyCollectionChanged, INotifyPropertyChanged, IList
     {
+        private const string _portalUri = "a25523e2241d4ff2bcc9182cc971c156";
         private BasemapGalleryItem _activeItem;
         private GeoView _geoview;
         private ArcGISPortal _portal;
         private CancellationTokenSource _cancellationSource;
         private ArcGISPortal _bakedInPortal;
-        private const string _portalUri = "a25523e2241d4ff2bcc9182cc971c156";
 
         private readonly ObservableCollection<BasemapGalleryItem> _internalList = new ObservableCollection<BasemapGalleryItem>();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BasemapGalleryDataSource"/> class.
+        /// </summary>
         public BasemapGalleryDataSource()
         {
             // Load from default list
             _cancellationSource = new CancellationTokenSource();
             _ = ConfigureFromDefaultList(_cancellationSource.Token);
 
-            _internalList.CollectionChanged += _internalList_CollectionChanged;
+            _internalList.CollectionChanged += InternalList_CollectionChanged;
         }
 
-        private void _internalList_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            CollectionChanged?.Invoke(this, e);
-        }
-
-        // Setting the portal sets the list
+        /// <summary>
+        /// Gets or sets the portal used to populate the list.
+        /// </summary>
+        /// <remarks>
+        /// Setting this to a new portal will reset the contents of the list, including any custom additions.
+        /// </remarks>
         public ArcGISPortal Portal
         {
             get => _portal;
@@ -83,7 +86,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        // Listens for geoview changes and map changes; refreshes each item if spatial reference changes
+        /// <summary>
+        /// Gets or sets a reference to the connected geoview.
+        /// </summary>
+        /// <remarks>
+        /// The GeoView and any map or scene is observed for changes.
+        /// Changes to the map or scene's spatial reference will change the validity of <see cref="BasemapGalleryItem"/> instances.
+        /// Selection of a basemap via <see cref="SelectedBasemap"/> will change the map or scene's basemap. If the map or scene property is null, a new map or scene will be created with the selected basemap.
+        /// </remarks>
         public GeoView GeoView
         {
             get => _geoview;
@@ -94,7 +104,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     if (_geoview != null)
                     {
-                        _geoview.SpatialReferenceChanged -= _geoview_SpatialReferenceChanged;
+                        _geoview.SpatialReferenceChanged -= Geoview_SpatialReferenceChanged;
                     }
 
                     _geoview = value;
@@ -102,25 +112,21 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
                     if (_geoview != null)
                     {
-                        _geoview.SpatialReferenceChanged += _geoview_SpatialReferenceChanged;
+                        _geoview.SpatialReferenceChanged += Geoview_SpatialReferenceChanged;
                         // TODO - handle map changes; need to listen to map for basemap changes
                     }
+
                     HandleSpatialReferenceChanged(_geoview?.SpatialReference);
                 }
             }
         }
 
-        private void HandleSpatialReferenceChanged(SpatialReference sr)
-        {
-            _internalList?.ToList().ForEach(item => _ = item.NotifySpatialReferenceChanged(sr));
-        }
-
-        private void _geoview_SpatialReferenceChanged(object sender, EventArgs e)
-        {
-            HandleSpatialReferenceChanged(_geoview?.SpatialReference);
-        }
-
-        // When this is set, map/scene is updated.
+        /// <summary>
+        /// Gets or sets the currently selected basemap.
+        /// </summary>
+        /// <remarks>
+        /// Setting this property will update the connected <see cref="GeoView"/>'s map or scene, or create a new map or scene if none is present.
+        /// </remarks>
         public BasemapGalleryItem SelectedBasemap
         {
             get => _activeItem;
@@ -158,26 +164,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        public int Count => _internalList?.Count() ?? 0;
-
-        public bool IsReadOnly => false;
-
-        public bool IsFixedSize => false;
-
-        public object SyncRoot => throw new NotImplementedException();
-
-        public bool IsSynchronized => false;
-
-        object IList.this[int index] { get => _internalList[index]; set => _internalList[index] = (BasemapGalleryItem)value; }
-
+        /// <inheritdoc/>
         public BasemapGalleryItem this[int index] { get => _internalList[index]; set => _internalList[index] = value; }
 
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
 
-        /// <summary>
         /// <inheritdoc />
-        /// </summary>
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         private async Task UpdateForCurrentPortal(ArcGISPortal portal, CancellationToken token)
@@ -226,34 +219,60 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             var results = await group.FindItemsAsync(searchParameters, token);
 
             // TODO - should token be passed to gallery item to cancel loading?
-            _internalList.Clear();
+            _internalList?.Clear();
 
             results.Results.Select(res => new BasemapGalleryItem(new Basemap(res))).ToList().ForEach(item => _internalList.Add(item));
         }
 
-        public int IndexOf(BasemapGalleryItem item) => _internalList?.IndexOf(item) ?? -1;
+        private void HandleSpatialReferenceChanged(SpatialReference sr) =>
+            _internalList?.ToList().ForEach(item => _ = item.NotifySpatialReferenceChanged(sr));
 
-        public void Insert(int index, BasemapGalleryItem item) => _internalList?.Insert(index, item);
+        private void Geoview_SpatialReferenceChanged(object sender, EventArgs e) =>
+            HandleSpatialReferenceChanged(_geoview?.SpatialReference);
 
-        public void RemoveAt(int index) => _internalList?.RemoveAt(index);
+        private void InternalList_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) =>
+            CollectionChanged?.Invoke(this, e);
 
-        public void Add(BasemapGalleryItem item) => _internalList?.Add(item);
+#region interface implementation
+        int ICollection<BasemapGalleryItem>.Count => _internalList?.Count() ?? 0;
 
-        public void Clear() => _internalList.Clear();
+        int ICollection.Count => _internalList?.Count() ?? 0;
 
-        public bool Contains(BasemapGalleryItem item) => _internalList?.Contains(item) ?? false;
+        bool IList.IsReadOnly => false;
 
-        public void CopyTo(BasemapGalleryItem[] array, int arrayIndex) => _internalList?.CopyTo(array, arrayIndex);
+        bool IList.IsFixedSize => false;
 
-        public bool Remove(BasemapGalleryItem item) => _internalList?.Remove(item) ?? false;
+        object ICollection.SyncRoot => throw new NotImplementedException();
 
-        public IEnumerator<BasemapGalleryItem> GetEnumerator() => _internalList?.GetEnumerator();
+        bool ICollection.IsSynchronized => false;
+
+        bool ICollection<BasemapGalleryItem>.IsReadOnly => throw new NotImplementedException();
+
+        object IList.this[int index] { get => _internalList[index]; set => _internalList[index] = (BasemapGalleryItem)value; }
+
+        int IList<BasemapGalleryItem>.IndexOf(BasemapGalleryItem item) => _internalList?.IndexOf(item) ?? -1;
+
+        void IList<BasemapGalleryItem>.Insert(int index, BasemapGalleryItem item) => _internalList?.Insert(index, item);
+
+        void IList<BasemapGalleryItem>.RemoveAt(int index) => _internalList?.RemoveAt(index);
+
+        void ICollection<BasemapGalleryItem>.Add(BasemapGalleryItem item) => _internalList?.Add(item);
+
+        void ICollection<BasemapGalleryItem>.Clear() => _internalList.Clear();
+
+        bool ICollection<BasemapGalleryItem>.Contains(BasemapGalleryItem item) => _internalList?.Contains(item) ?? false;
+
+        void ICollection<BasemapGalleryItem>.CopyTo(BasemapGalleryItem[] array, int arrayIndex) => _internalList?.CopyTo(array, arrayIndex);
+
+        bool ICollection<BasemapGalleryItem>.Remove(BasemapGalleryItem item) => _internalList?.Remove(item) ?? false;
+
+        IEnumerator<BasemapGalleryItem> IEnumerable<BasemapGalleryItem>.GetEnumerator() => _internalList?.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => _internalList?.GetEnumerator();
 
         int IList.Add(object value)
         {
-            _internalList.Insert(0, (BasemapGalleryItem)value);
+            _internalList?.Insert(0, (BasemapGalleryItem)value);
             return _internalList != null ? 0 : -1;
         }
 
@@ -265,6 +284,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         void IList.Remove(object value) => _internalList?.Remove((BasemapGalleryItem)value);
 
-        public void CopyTo(Array array, int index) => _internalList?.CopyTo((BasemapGalleryItem[])array, index);
+        void ICollection.CopyTo(Array array, int index) => _internalList?.CopyTo((BasemapGalleryItem[])array, index);
+
+        void IList.Clear() => _internalList?.Clear();
+
+        void IList.RemoveAt(int index) => _internalList?.RemoveAt(index);
+#endregion interface implementation
     }
 }

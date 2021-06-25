@@ -24,7 +24,6 @@ using Esri.ArcGISRuntime.UI;
 using Xamarin.Forms;
 #elif NETFX_CORE
 using Windows.UI.Xaml.Media;
-using Esri.ArcGISRuntime.UI;
 #elif NETFRAMEWORK || NETCOREAPP
 using System.Windows.Media;
 using Esri.ArcGISRuntime.UI;
@@ -129,11 +128,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets whether this basemap is a valid selection.
+        /// Gets a value indicating whether this basemap is a valid selection.
         /// </summary>
         public bool IsValid
         {
-            get => _isValid; set
+            get => _isValid;
+            private set
             {
                 if (_isValid != value)
                 {
@@ -175,6 +175,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
+        /// <summary>
+        /// Gets the thumbnail in a format that is easily displayable in a view.
+        /// </summary>
         public ImageSource ThumbnailImageSource
         {
             get => _thumbnailImageSource;
