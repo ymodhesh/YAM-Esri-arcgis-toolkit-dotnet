@@ -26,7 +26,11 @@ using System.Threading.Tasks;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Portal;
+#if XAMARIN_FORMS
+using Esri.ArcGISRuntime.Xamarin.Forms;
+#else
 using Esri.ArcGISRuntime.UI.Controls;
+#endif
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {

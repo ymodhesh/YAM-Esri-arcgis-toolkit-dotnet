@@ -13,7 +13,6 @@
 //  *   See the License for the specific language governing permissions and
 //  *   limitations under the License.
 //  ******************************************************************************/
-
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -21,11 +20,14 @@ using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.UI;
 
-#if NETFX_CORE
+#if XAMARIN_FORMS
+using Xamarin.Forms;
+#elif NETFX_CORE
 using Windows.UI.Xaml.Media;
+using Esri.ArcGISRuntime.UI;
 #elif NETFRAMEWORK || NETCOREAPP
 using System.Windows.Media;
-#elif XAMARIN
+using Esri.ArcGISRuntime.UI;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
@@ -36,7 +38,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public class BasemapGalleryItem : INotifyPropertyChanged
     {
         private RuntimeImage _thumbnailOverride;
-        #if NETFX_CORE || NETFRAMEWORK || NETCOREAPP
+        #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
         private ImageSource _thumbnailImageSource;
         #endif
         private string _tooltipOverride;
@@ -87,12 +89,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     await Thumbnail.RetryLoadAsync();
                 }
 
-                #if NETFRAMEWORK || NETFX_CORE || NETCOREAPP
                 if (Thumbnail != null)
                 {
+                    #if XAMARIN_FORMS
+                    ThumbnailImageSource = await Esri.ArcGISRuntime.Xamarin.Forms.RuntimeImageExtensions.ToImageSourceAsync(Thumbnail);
+                    #elif !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
                     ThumbnailImageSource = await Thumbnail.ToImageSourceAsync();
+                    #endif
                 }
-                #endif
             }
             catch (Exception)
             {
@@ -170,7 +174,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        #if NETCOREAPP || NETFX_CORE || NETFRAMEWORK
+        #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
         public ImageSource ThumbnailImageSource
         {
             get => _thumbnailImageSource;

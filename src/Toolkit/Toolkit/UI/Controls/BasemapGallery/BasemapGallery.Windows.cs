@@ -16,9 +16,6 @@
 
 #if !__IOS__ && !__ANDROID__
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
 using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.UI.Controls;
 #if NETFX_CORE
@@ -59,9 +56,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             DefaultStyleKey = typeof(BasemapGallery);
             _dataSource = new BasemapGalleryDataSource();
             DataContext = this;
-            this.SizeChanged += BasemapGallery_SizeChanged;
+            SizeChanged += BasemapGallery_SizeChanged;
         }
-
 
         /// <summary>
         /// Gets the data source for the gallery.
@@ -275,7 +271,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         #if NETFX_CORE
-        private class WrapPanel { }
+        // Shim makes cross-platform code easier
+        private class WrapPanel
+        {
+        }
         #endif
 
         private ItemsPanelTemplate GetItemsPanelTemplate(Type panelType)
