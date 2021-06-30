@@ -4,20 +4,58 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:esri="using:Esri.ArcGISRuntime.UI.Controls"
-    xmlns:mapping="using:Esri.ArcGISRuntime.Mapping"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:toolkit="using:Esri.ArcGISRuntime.Toolkit.UI.Controls"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
+    <Page.Resources>
+        <Style TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+    </Page.Resources>
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="200" />
-        </Grid.RowDefinitions>
         <esri:MapView x:Name="MyMapView" />
-        <toolkit:BasemapGallery
-            Grid.Row="1"
-            GeoView="{Binding ElementName=MyMapView}"
-            ViewStyleWidthThreshold="750" />
+        <esri:SceneView x:Name="MySceneView" Visibility="Collapsed" />
+        <esri:SceneView x:Name="MySceneViewWG" Visibility="Collapsed" />
+
+        <Border
+            Margin="8"
+            Padding="8"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Width="200"
+            Background="White">
+            <StackPanel>
+                <TextBlock Text="Control Width:" />
+                <Slider Minimum="0" Maximum="1000" Value="200" x:Name="WidthSlider" />
+                <TextBlock Text="Width threshold:" />
+                <Slider Minimum="0" Maximum="1000" Value="400" x:Name="ThresholdSlider" />
+                <TextBlock Text="Gallery View Style: " />
+                <ComboBox x:Name="ViewStyleCombobox" HorizontalAlignment="Stretch" SelectionChanged="ViewStyleCombobox_SelectionChanged" />
+                <TextBlock Text="Load a new:" />
+                <Button Content="Scene in WebMercator" Click="Button_Load_Scene_WM" />
+                <Button Content="Map in WebMercator" Click="Button_Load_Map_WM" />
+                <Button Content="Scene in WGS84" Click="Button_Load_Scene_WGS" />
+                <Button Content="Map in WGS84" Click="Button_Load_Map_WGS" />
+                <Button Content="Null Map" Click="Button_Load_Map_Null" />
+                <Button Content="Null Scene" Click="Button_Load_Scene_Null" />
+                <TextBlock Text="Set a new:" />
+                <Button Content="ArcGIS Online Portal" IsEnabled="False" />
+                <Button Content="Runtime SDK Portal" IsEnabled="False" />
+                <TextBlock Text="Manipulate list by:" />
+                <Button Content="Adding an Item" Click="Button_Add_Last" />
+                <Button Content="Removing an Item" Click="Button_Remove_Last" />
+            </StackPanel>
+        </Border>
+
+        <Border
+            Margin="8"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Background="White">
+            <toolkit:BasemapGallery x:Name="Gallery" 
+                                    Width="{Binding ElementName=WidthSlider, Path=Value}" 
+                                    ViewStyleWidthThreshold="{Binding ElementName=ThresholdSlider, Path=Value}" />
+        </Border>
     </Grid>
 </Page>
