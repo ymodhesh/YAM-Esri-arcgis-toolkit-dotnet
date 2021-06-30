@@ -43,7 +43,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private string _tooltipOverride;
         private string _nameOverride;
         private bool _isLoading;
-        private bool _isValid;
+        private bool _isValid = true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -63,10 +63,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 if (Basemap != null && Basemap.LoadStatus != LoadStatus.Loaded)
                 {
                     await Basemap.RetryLoadAsync();
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
-                    await LoadImage();
                 }
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
+                await LoadImage();
             }
             catch (Exception)
             {
@@ -111,13 +111,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         {
             if (sr == null)
             {
-                IsValid = false;
+                IsValid = true;
                 return;
             }
 
             await LoadBasemapAsync();
 
-            var map = new Map(Basemap);
+            var map = new Map(Basemap.Clone());
             await map.LoadAsync();
             if (map.LoadStatus != LoadStatus.Loaded)
             {
@@ -201,7 +201,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return _tooltipOverride;
                 }
 
-                return Basemap.Item.Snippet;
+                return Basemap?.Item?.Snippet;
             }
 
             set
@@ -209,7 +209,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 if (_tooltipOverride != value)
                 {
                     _tooltipOverride = value;
-                    PropertyChanged.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
                 }
             }
         }
