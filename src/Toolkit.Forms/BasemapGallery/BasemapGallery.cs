@@ -31,7 +31,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
     public class BasemapGallery : TemplatedView
     {
         private CollectionView _presentingView;
-        private readonly BasemapGalleryDataSource _dataSource = new BasemapGalleryDataSource();
+        private readonly BasemapGalleryController _controller = new BasemapGalleryController();
 
         // Tracks currently-applied layout to avoid unnecessary re-styling of the view
         private int _currentSelectedSpan = 0;
@@ -104,9 +104,9 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
 
             if (_presentingView != null)
             {
-                _presentingView.ItemsSource = _dataSource.AllItems;
-                _presentingView.BindingContext = _dataSource;
-                _presentingView.SetBinding(CollectionView.SelectedItemProperty, nameof(_dataSource.SelectedBasemap), BindingMode.TwoWay);
+                _presentingView.ItemsSource = _controller.Basemaps;
+                _presentingView.BindingContext = _controller;
+                _presentingView.SetBinding(CollectionView.SelectedItemProperty, nameof(_controller.SelectedBasemap), BindingMode.TwoWay);
                 HandleTemplateChange(Width);
             }
         }
@@ -192,7 +192,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// Handles property changes for the <see cref="GeoView" /> bindable property.
         /// </summary>
         private static void GeoViewChanged(BindableObject sender, object oldValue, object newValue) =>
-            ((BasemapGallery)sender)._dataSource.GeoView = newValue as GeoView;
+            ((BasemapGallery)sender)._controller.GeoView = newValue as GeoView;
 
         /// <summary>
         /// Handles property changes for the bindable properties that can trigger a style or template change.

@@ -26,7 +26,6 @@ using Xamarin.Forms;
 using Windows.UI.Xaml.Media;
 #elif NETFRAMEWORK || NETCOREAPP
 using System.Windows.Media;
-using Esri.ArcGISRuntime.UI;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
@@ -36,13 +35,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// </summary>
     public class BasemapGalleryItem : INotifyPropertyChanged, IEquatable<BasemapGalleryItem>
     {
-        private RuntimeImage _thumbnailOverride;
+        private RuntimeImage? _thumbnailOverride;
         #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
-        private ImageSource _thumbnailImageSource;
+        private ImageSource? _thumbnailImageSource;
         #endif
-        private string _tooltipOverride;
-        private string _nameOverride;
-        private bool _isLoading;
+        private string? _tooltipOverride;
+        private string? _nameOverride;
+        private bool _isLoading = false;
         private bool _isValid = true;
 
         /// <summary>
@@ -64,6 +63,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     await Basemap.RetryLoadAsync();
                 }
+
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tooltip)));
                 await LoadImage();
@@ -107,7 +107,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        internal async Task NotifySpatialReferenceChanged(SpatialReference sr)
+        internal async Task NotifySpatialReferenceChanged(SpatialReference? sr)
         {
             if (sr == null)
             {
@@ -127,7 +127,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             IsValid = map.SpatialReference == sr;
         }
 
-        public bool Equals(BasemapGalleryItem other)
+        /// <inheritdoc />
+        public bool Equals(BasemapGalleryItem? other)
         {
             if (other == null)
             {
@@ -157,13 +158,21 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             return false;
         }
 
-        public override bool Equals(object obj)
+        /// <inheritdoc />
+        public override bool Equals(object? obj)
         {
             if (obj is BasemapGalleryItem other)
             {
                 return Equals(other);
             }
+
             return base.Equals(obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
 
         /// <summary>
@@ -190,7 +199,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Gets or sets the thumbnail to display for this basemap item.
         /// </summary>
-        public RuntimeImage Thumbnail
+        public RuntimeImage? Thumbnail
         {
             get
             {
@@ -199,7 +208,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return _thumbnailOverride;
                 }
 
-                return Basemap?.Item?.Thumbnail;
+                return Basemap.Item?.Thumbnail;
             }
 
             set
@@ -217,7 +226,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Gets the thumbnail in a format that is easily displayable in a view.
         /// </summary>
-        public ImageSource ThumbnailImageSource
+        public ImageSource? ThumbnailImageSource
         {
             get => _thumbnailImageSource;
             private set
@@ -240,7 +249,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return _tooltipOverride;
                 }
 
-                return Basemap?.Item?.Snippet;
+                return Basemap.Item?.Snippet ?? string.Empty;
             }
 
             set
@@ -260,7 +269,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         {
             get
             {
-                return _nameOverride ?? Basemap?.Name;
+                return _nameOverride ?? Basemap.Name;
             }
 
             set
@@ -290,6 +299,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <inheritdoc/>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

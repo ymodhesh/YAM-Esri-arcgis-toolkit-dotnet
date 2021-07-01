@@ -29,9 +29,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public class PinnableCollection<T> : IList<T>, INotifyCollectionChanged, INotifyPropertyChanged, IList
         where T : class
     {
-        private T _pinnedItem;
-        private List<T> _unpinnedItems;
-        private List<T> _fullView;
+        private T? _pinnedItem;
+        private readonly List<T> _unpinnedItems;
+        private readonly List<T> _fullView;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PinnableCollection{T}"/> class.
@@ -46,7 +46,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// Gets or sets the pinned item. The pinned item stays at the top (0 position) of the collection.
         /// Pinned item is immune to <see cref="Remove(T)"/>, <see cref="RemoveAt(int)"/>, <see cref="Clear"/>, and other collection change operations.
         /// </summary>
-        public T PinnedItem
+        public T? PinnedItem
         {
             get => _pinnedItem;
             set
@@ -84,10 +84,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <inheritdoc/>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <inheritdoc />
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
         int ICollection<T>.Count => _fullView.Count;
 
@@ -103,7 +103,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         bool ICollection<T>.IsReadOnly => false;
 
-        object IList.this[int index]
+        object? IList.this[int index]
         {
             get => _fullView[index];
             set => throw new NotImplementedException();
@@ -209,7 +209,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         IEnumerator IEnumerable.GetEnumerator() => _fullView.GetEnumerator();
 
-        int IList.Add(object value)
+        int IList.Add(object? value)
         {
             if (value is T item)
             {
@@ -220,7 +220,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             return -1;
         }
 
-        bool IList.Contains(object value)
+        bool IList.Contains(object? value)
         {
             if (value is T item)
             {
@@ -230,7 +230,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             return false;
         }
 
-        int IList.IndexOf(object value)
+        int IList.IndexOf(object? value)
         {
             if (value is T item)
             {
@@ -240,7 +240,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             return -1;
         }
 
-        void IList.Insert(int index, object value)
+        void IList.Insert(int index, object? value)
         {
             if (value is T item)
             {
@@ -248,7 +248,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        void IList.Remove(object value)
+        void IList.Remove(object? value)
         {
             if (value is T item)
             {
@@ -264,10 +264,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private void UpdateFullView()
         {
-            _fullView = new List<T>();
+            _fullView.Clear();
             if (_pinnedItem != null)
             {
-                _fullView.Add(PinnedItem);
+                _fullView.Add(_pinnedItem);
             }
 
             _fullView.AddRange(_unpinnedItems);

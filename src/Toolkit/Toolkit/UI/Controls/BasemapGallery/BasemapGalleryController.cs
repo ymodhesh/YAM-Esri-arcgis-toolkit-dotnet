@@ -15,13 +15,9 @@
 //  ******************************************************************************/
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
@@ -30,8 +26,8 @@ using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.Xamarin.Forms;
 using Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Internal;
 #else
-using Esri.ArcGISRuntime.UI.Controls;
 using Esri.ArcGISRuntime.Toolkit.Internal;
+using Esri.ArcGISRuntime.UI.Controls;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
@@ -39,13 +35,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// <summary>
     /// Modifiable, observable collection of basemaps. Note, collection contents will be reset when a portal is set.
     /// </summary>
-    public class BasemapGalleryDataSource : INotifyPropertyChanged
+    public class BasemapGalleryController : INotifyPropertyChanged
     {
         private const string _portalUri = "a25523e2241d4ff2bcc9182cc971c156";
-        private BasemapGalleryItem _selectedBasemap;
-        private GeoView _geoview;
-        private ArcGISPortal _portal;
-        private ArcGISPortal _bakedInPortal;
+        private BasemapGalleryItem? _selectedBasemap;
+        private GeoView? _geoview;
+        private ArcGISPortal? _portal;
+        private ArcGISPortal? _bakedInPortal;
         private bool _showUnrecognizedBasemapsAsSelected = true;
 
         private readonly PinnableCollection<BasemapGalleryItem> _galleryItems = new PinnableCollection<BasemapGalleryItem>();
@@ -54,18 +50,18 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 #endif
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BasemapGalleryDataSource"/> class.
+        /// Initializes a new instance of the <see cref="BasemapGalleryController"/> class.
         /// </summary>
-        public BasemapGalleryDataSource()
+        public BasemapGalleryController()
         {
             // Load from default list
             _ = ConfigureFromDefaultList();
         }
 
         /// <summary>
-        /// Gets the collection of items to display
+        /// Gets the collection of items to display.
         /// </summary>
-        public PinnableCollection<BasemapGalleryItem> AllItems => _galleryItems;
+        public PinnableCollection<BasemapGalleryItem> Basemaps => _galleryItems;
 
         /// <summary>
         /// Gets or sets the portal used to populate the list.
@@ -73,7 +69,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <remarks>
         /// Setting this to a new portal will reset the contents of the list, including any custom additions.
         /// </remarks>
-        public ArcGISPortal Portal
+        public ArcGISPortal? Portal
         {
             get => _portal;
             set
@@ -95,7 +91,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// Changes to the map or scene's spatial reference will change the validity of <see cref="BasemapGalleryItem"/> instances.
         /// Selection of a basemap via <see cref="SelectedBasemap"/> will change the map or scene's basemap. If the map or scene property is null, a new map or scene will be created with the selected basemap.
         /// </remarks>
-        public GeoView GeoView
+        public GeoView? GeoView
         {
             get => _geoview;
 
@@ -180,7 +176,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private async Task HandleMapBasemapChanges()
         {
             // If current scene/map is null, selected item is null & pinned item is null
-            Basemap basemapFromView = null;
+            Basemap? basemapFromView = null;
 
             if (GeoView is MapView mapView && mapView.Map?.Basemap != null)
             {
@@ -220,7 +216,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        private void GeoViewDocumentChanged(object sender, object e)
+        private void GeoViewDocumentChanged(object? sender, object? e)
         {
             if (e is PropertyChangedEventArgs pcea && pcea.PropertyName != nameof(SceneView.Scene) && pcea.PropertyName != nameof(MapView.Map))
             {
@@ -261,7 +257,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <remarks>
         /// Setting this property will update the connected <see cref="GeoView"/>'s map or scene, or create a new map or scene if none is present.
         /// </remarks>
-        public BasemapGalleryItem SelectedBasemap
+        public BasemapGalleryItem? SelectedBasemap
         {
             get => _selectedBasemap;
 
@@ -322,9 +318,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <inheritdoc/>
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        private async Task UpdateForCurrentPortal(ArcGISPortal portal)
+        private async Task UpdateForCurrentPortal(ArcGISPortal? portal)
         {
             if (portal == null)
             {
@@ -333,7 +329,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
 
             Task<IEnumerable<Basemap>> getBasemapsTask;
-            if (portal.PortalInfo.UseVectorBasemaps)
+            if (portal.PortalInfo?.UseVectorBasemaps ?? false)
             {
                 getBasemapsTask = portal.GetVectorBasemapsAsync();
             }
@@ -373,9 +369,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             _galleryItems.AddRange(results.Results.Select(res => new BasemapGalleryItem(new Basemap(res))));
         }
 
-        private void HandleSpatialReferenceChanged(BasemapGalleryItem inputItem = null)
+        private void HandleSpatialReferenceChanged(BasemapGalleryItem? inputItem = null)
         {
-            SpatialReference currentSR = GeoView?.SpatialReference;
+            SpatialReference? currentSR = GeoView?.SpatialReference;
             if (GeoView is SceneView sv && sv.Scene is Scene scene)
             {
                 currentSR = scene.SceneViewTilingScheme == SceneViewTilingScheme.WebMercator ? SpatialReferences.WebMercator : SpatialReferences.Wgs84;
@@ -391,7 +387,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        private void Geoview_SpatialReferenceChanged(object sender, EventArgs e) =>
+        private void Geoview_SpatialReferenceChanged(object? sender, EventArgs? e) =>
             HandleSpatialReferenceChanged();
 
         /// <summary>

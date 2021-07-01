@@ -34,6 +34,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Always display a list.
         /// </summary>
-        List = 2
+        List = 2,
     }
 }

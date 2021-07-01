@@ -109,12 +109,12 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.BasemapGallery
                 Tooltip = Guid.NewGuid().ToString(),
                 Thumbnail = new ArcGISRuntime.UI.RuntimeImage(new Uri("https://www.esri.com/content/dam/esrisites/en-us/home/homepage-tile-arcgis-collaboration.jpg"))
             };
-            Gallery.Basemaps.Add(item);
+            Gallery.Controller.Add(item);
         }
 
         private void Button_Remove_Last(object sender, RoutedEventArgs e)
         {
-            Gallery.Basemaps.Remove(Gallery.Basemaps.AllItems.Last());
+            Gallery.Controller.Remove(Gallery.Controller.Basemaps.Last());
         }
     }
 }

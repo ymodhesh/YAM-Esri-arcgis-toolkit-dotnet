@@ -189,9 +189,9 @@
                         VerticalAlignment="{TemplateBinding VerticalAlignment}"
                         HorizontalContentAlignment="Stretch"
                         Background="{TemplateBinding Background}"
-                        ItemsSource="{Binding Basemaps.AllItems, Mode=OneWay}"
+                        ItemsSource="{Binding Controller.Basemaps, Mode=OneWay}"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                        SelectedItem="{Binding Basemaps.SelectedBasemap, Mode=TwoWay}">
+                        SelectedItem="{Binding Controller.SelectedBasemap, Mode=TwoWay}">
                         <ListView.Resources>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />

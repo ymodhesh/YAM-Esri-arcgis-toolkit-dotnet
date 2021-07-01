@@ -40,10 +40,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     [TemplatePart(Name = "PART_InnerListView", Type = typeof(ListView))]
     public class BasemapGallery : Control
     {
-        private ListView _listViewFromTemplate;
-        private readonly BasemapGalleryDataSource _dataSource;
-        private ItemsPanelTemplate _listTemplate;
-        private ItemsPanelTemplate _gridTemplate;
+        private ListView? _listViewFromTemplate;
+        private readonly BasemapGalleryController _controller;
+        private ItemsPanelTemplate? _listTemplate;
+        private ItemsPanelTemplate? _gridTemplate;
 
         // Track currently applied style to avoid unnecessary re-styling of list view
         private BasemapGalleryViewStyle _currentlyAppliedStyle = BasemapGalleryViewStyle.Automatic;
@@ -54,7 +54,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         public BasemapGallery()
         {
             DefaultStyleKey = typeof(BasemapGallery);
-            _dataSource = new BasemapGalleryDataSource();
+            _controller = new BasemapGalleryController();
             DataContext = this;
             SizeChanged += BasemapGallery_SizeChanged;
         }
@@ -62,7 +62,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Gets the data source for the gallery.
         /// </summary>
-        public BasemapGalleryDataSource Basemaps { get => _dataSource; }
+        public BasemapGalleryController Controller { get => _controller; }
 
         /// <summary>
         /// <inheritdoc />
@@ -83,8 +83,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public ArcGISPortal Portal
         {
-            get { return (ArcGISPortal)GetValue(PortalProperty); }
-            set { SetValue(PortalProperty, value); }
+            get => (ArcGISPortal)GetValue(PortalProperty);
+            set => SetValue(PortalProperty, value);
         }
 
         /// <summary>
@@ -92,8 +92,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public GeoView GeoView
         {
-            get { return (GeoView)GetValue(GeoViewProperty); }
-            set { SetValue(GeoViewProperty, value); }
+            get => (GeoView)GetValue(GeoViewProperty);
+            set => SetValue(GeoViewProperty, value);
         }
 
         /// <summary>
@@ -101,8 +101,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public Style ListItemContainerStyle
         {
-            get { return (Style)GetValue(ListItemContainerStyleProperty); }
-            set { SetValue(ListItemContainerStyleProperty, value); }
+            get => (Style)GetValue(ListItemContainerStyleProperty);
+            set => SetValue(ListItemContainerStyleProperty, value);
         }
 
         /// <summary>
@@ -110,8 +110,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public Style GridItemContainerStyle
         {
-            get { return (Style)GetValue(GridItemContainerStyleProperty); }
-            set { SetValue(GridItemContainerStyleProperty, value); }
+            get => (Style)GetValue(GridItemContainerStyleProperty);
+            set => SetValue(GridItemContainerStyleProperty, value);
         }
 
         /// <summary>
@@ -119,8 +119,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public DataTemplate ListItemTemplate
         {
-            get { return (DataTemplate)GetValue(ListItemTemplateProperty); }
-            set { SetValue(ListItemTemplateProperty, value); }
+            get => (DataTemplate)GetValue(ListItemTemplateProperty);
+            set => SetValue(ListItemTemplateProperty, value);
         }
 
         /// <summary>
@@ -128,8 +128,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public DataTemplate GridItemTemplate
         {
-            get { return (DataTemplate)GetValue(GridItemTemplateProperty); }
-            set { SetValue(GridItemTemplateProperty, value); }
+            get => (DataTemplate)GetValue(GridItemTemplateProperty);
+            set => SetValue(GridItemTemplateProperty, value);
         }
 
         /// <summary>
@@ -137,8 +137,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public BasemapGalleryViewStyle GalleryViewStyle
         {
-            get { return (BasemapGalleryViewStyle)GetValue(GalleryViewStyleProperty); }
-            set { SetValue(GalleryViewStyleProperty, value); }
+            get => (BasemapGalleryViewStyle)GetValue(GalleryViewStyleProperty);
+            set => SetValue(GalleryViewStyleProperty, value);
         }
 
         /// <summary>
@@ -146,19 +146,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public double ViewStyleWidthThreshold
         {
-            get { return (double)GetValue(ViewStyleWidthThresholdProperty); }
-            set { SetValue(ViewStyleWidthThresholdProperty, value); }
+            get => (double)GetValue(ViewStyleWidthThresholdProperty);
+            set => SetValue(ViewStyleWidthThresholdProperty, value);
         }
 
-        private static void OnGeoViewPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            ((BasemapGallery)d)._dataSource.GeoView = e.NewValue as GeoView;
-        }
+        private static void OnGeoViewPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((BasemapGallery)d)._controller.GeoView = e.NewValue as GeoView;
 
-        private static void OnPortalPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            ((BasemapGallery)d)._dataSource.Portal = e.NewValue as ArcGISPortal;
-        }
+        private static void OnPortalPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((BasemapGallery)d)._controller.Portal = e.NewValue as ArcGISPortal;
 
         private static void OnViewLayoutPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -220,10 +214,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         public static readonly DependencyProperty ViewStyleWidthThresholdProperty =
             DependencyProperty.Register(nameof(ViewStyleWidthThreshold), typeof(double), typeof(BasemapGallery), new PropertyMetadata(440.0, OnViewLayoutPropertyChanged));
 
-        private void BasemapGallery_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            SetNewStyle(e.NewSize.Width);
-        }
+        private void BasemapGallery_SizeChanged(object sender, SizeChangedEventArgs e) => SetNewStyle(e.NewSize.Width);
 
         private void SetNewStyle(double currentSize)
         {
