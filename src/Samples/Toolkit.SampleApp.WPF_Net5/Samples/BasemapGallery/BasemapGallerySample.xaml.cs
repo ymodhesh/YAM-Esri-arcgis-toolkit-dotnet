@@ -66,7 +66,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.BasemapGallery
             MySceneView.Visibility = Visibility.Visible;
             MySceneViewWG.Visibility = Visibility.Hidden;
             Gallery.GeoView = MySceneView;
-            MySceneView.Scene = new Scene(BasemapStyle.ArcGISImagery);
+            MySceneView.Scene = new Scene(BasemapStyle.ArcGISImageryStandard);
         }
         private void Button_Load_Map_WGS(object sender, RoutedEventArgs e)
         {
@@ -114,10 +114,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.BasemapGallery
 
         private void Button_Remove_Last(object sender, RoutedEventArgs e)
         {
-            if (Gallery.Basemaps.Any())
-            {
-                Gallery.Basemaps.RemoveAt(Gallery.Basemaps.Count() - 1);
-            }
+            Gallery.Basemaps.Remove(Gallery.Basemaps.AllItems.Last());
         }
     }
 }

@@ -182,7 +182,7 @@
               HorizontalContentAlignment="Stretch"
               VerticalAlignment="{TemplateBinding VerticalAlignment}"
               Background="{TemplateBinding Background}"
-              ItemsSource="{Binding Basemaps, Mode=OneWay}"
+              ItemsSource="{Binding Basemaps.AllItems, Mode=OneWay}"
               Padding="0"
               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
               SelectedItem="{Binding Basemaps.SelectedBasemap, Mode=TwoWay}">

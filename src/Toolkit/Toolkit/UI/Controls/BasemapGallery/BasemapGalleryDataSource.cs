@@ -28,8 +28,10 @@ using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Portal;
 #if XAMARIN_FORMS
 using Esri.ArcGISRuntime.Xamarin.Forms;
+using Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Internal;
 #else
 using Esri.ArcGISRuntime.UI.Controls;
+using Esri.ArcGISRuntime.Toolkit.Internal;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
@@ -37,16 +39,19 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// <summary>
     /// Modifiable, observable collection of basemaps. Note, collection contents will be reset when a portal is set.
     /// </summary>
-    public class BasemapGalleryDataSource : IList<BasemapGalleryItem>, INotifyCollectionChanged, INotifyPropertyChanged, IList
+    public class BasemapGalleryDataSource : INotifyPropertyChanged
     {
         private const string _portalUri = "a25523e2241d4ff2bcc9182cc971c156";
-        private BasemapGalleryItem _activeItem;
+        private BasemapGalleryItem _selectedBasemap;
         private GeoView _geoview;
         private ArcGISPortal _portal;
-        private CancellationTokenSource _cancellationSource;
         private ArcGISPortal _bakedInPortal;
+        private bool _showUnrecognizedBasemapsAsSelected = true;
 
-        private readonly ObservableCollection<BasemapGalleryItem> _internalList = new ObservableCollection<BasemapGalleryItem>();
+        private readonly PinnableCollection<BasemapGalleryItem> _galleryItems = new PinnableCollection<BasemapGalleryItem>();
+#if NETFX_CORE
+        private long _propertyChangedCallbackToken;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryDataSource"/> class.
@@ -54,11 +59,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         public BasemapGalleryDataSource()
         {
             // Load from default list
-            _cancellationSource = new CancellationTokenSource();
-            _ = ConfigureFromDefaultList(_cancellationSource.Token);
-
-            _internalList.CollectionChanged += InternalList_CollectionChanged;
+            _ = ConfigureFromDefaultList();
         }
+
+        /// <summary>
+        /// Gets the collection of items to display
+        /// </summary>
+        public PinnableCollection<BasemapGalleryItem> AllItems => _galleryItems;
 
         /// <summary>
         /// Gets or sets the portal used to populate the list.
@@ -75,13 +82,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     _portal = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Portal)));
-                    if (_cancellationSource != null)
-                    {
-                        _cancellationSource.Cancel();
-                    }
-
-                    _cancellationSource = new CancellationTokenSource();
-                    _ = UpdateForCurrentPortal(_portal, _cancellationSource.Token);
+                    _ = UpdateForCurrentPortal(_portal);
                 }
             }
         }
@@ -102,22 +103,155 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 if (_geoview != value)
                 {
-                    if (_geoview != null)
+                    if (_geoview is MapView oldMapView)
                     {
-                        _geoview.SpatialReferenceChanged -= Geoview_SpatialReferenceChanged;
+                        oldMapView.SpatialReferenceChanged -= Geoview_SpatialReferenceChanged;
+#if NETFX_CORE && !XAMARIN_FORMS
+                        oldMapView.UnregisterPropertyChangedCallback(MapView.MapProperty, _propertyChangedCallbackToken);
+#elif NETCOREAPP || NETFRAMEWORK
+                        DependencyPropertyDescriptor.FromProperty(MapView.MapProperty, typeof(MapView)).RemoveValueChanged(oldMapView, GeoViewDocumentChanged);
+#endif
+                    }
+                    else if (_geoview is SceneView oldSceneView)
+                    {
+                        oldSceneView.SpatialReferenceChanged -= Geoview_SpatialReferenceChanged;
+#if NETFX_CORE && !XAMARIN_FORMS
+                        oldSceneView.UnregisterPropertyChangedCallback(SceneView.SceneProperty, _propertyChangedCallbackToken);
+#elif NETCOREAPP || NETFRAMEWORK
+                        DependencyPropertyDescriptor.FromProperty(SceneView.SceneProperty, typeof(SceneView)).RemoveValueChanged(oldSceneView, GeoViewDocumentChanged);
+#endif
+                    }
+
+                    if (_geoview is INotifyPropertyChanged oldViewAsINPC)
+                    {
+                        oldViewAsINPC.PropertyChanged -= GeoViewDocumentChanged;
                     }
 
                     _geoview = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GeoView)));
 
-                    if (_geoview != null)
+                    if (_geoview is MapView newMapView)
                     {
                         _geoview.SpatialReferenceChanged += Geoview_SpatialReferenceChanged;
-                        // TODO - handle map changes; need to listen to map for basemap changes
+#if NETFX_CORE && !XAMARIN_FORMS
+                        _propertyChangedCallbackToken = newMapView.RegisterPropertyChangedCallback(MapView.MapProperty, GeoViewDocumentChanged);
+#elif NETCOREAPP || NETFRAMEWORK // WPF
+                        DependencyPropertyDescriptor.FromProperty(MapView.MapProperty, typeof(MapView)).AddValueChanged(newMapView, GeoViewDocumentChanged);
+#endif
+                    }
+                    else if (_geoview is SceneView newSceneView)
+                    {
+                        _geoview.SpatialReferenceChanged += Geoview_SpatialReferenceChanged;
+#if NETFX_CORE && !XAMARIN_FORMS
+                        _propertyChangedCallbackToken = newSceneView.RegisterPropertyChangedCallback(SceneView.SceneProperty, GeoViewDocumentChanged);
+#elif NETCOREAPP || NETFRAMEWORK // WPF
+                        DependencyPropertyDescriptor.FromProperty(SceneView.SceneProperty, typeof(SceneView)).AddValueChanged(newSceneView, GeoViewDocumentChanged);
+#endif
                     }
 
-                    HandleSpatialReferenceChanged(_geoview?.SpatialReference);
+                    if (_geoview is INotifyPropertyChanged newViewAsINPC)
+                    {
+                        newViewAsINPC.PropertyChanged += GeoViewDocumentChanged;
+                    }
+
+                    SelectedBasemap = null;
+
+                    // SceneView always reports WGS84, but uses WebMercator basemaps
+                    HandleSpatialReferenceChanged();
+                    _ = HandleMapBasemapChanges();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Maps and scenes start with an empty basemap that should not be shown in the UI.
+        /// </summary>
+        private async Task<bool> BasemapIsActuallyNotABasemap(Basemap input)
+        {
+            await input.LoadAsync();
+            if (!input.BaseLayers.Any() && !input.ReferenceLayers.Any())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task HandleMapBasemapChanges()
+        {
+            // If current scene/map is null, selected item is null & pinned item is null
+            Basemap basemapFromView = null;
+
+            if (GeoView is MapView mapView && mapView.Map?.Basemap != null)
+            {
+                basemapFromView = mapView.Map.Basemap;
+            }
+            else if (GeoView is SceneView sceneView && sceneView.Scene?.Basemap != null)
+            {
+                basemapFromView = sceneView.Scene.Basemap;
+            }
+
+            // Handle case where map and scene start with empty basemap
+            if (basemapFromView != null && await BasemapIsActuallyNotABasemap(basemapFromView))
+            {
+                basemapFromView = null;
+            }
+
+            if (basemapFromView == null)
+            {
+                _galleryItems.PinnedItem = null;
+                SelectedBasemap = null;
+                return;
+            }
+
+            BasemapGalleryItem itemForBasemap = new BasemapGalleryItem(basemapFromView);
+
+            // If current map/scene basemap is in collection, select it
+            if (_galleryItems.Contains(itemForBasemap, false))
+            {
+                _galleryItems.PinnedItem = null;
+                SelectedBasemap = itemForBasemap;
+            }
+            else
+            {
+                // If current basemap isn't in collection, pin it and select it
+                _galleryItems.PinnedItem = itemForBasemap;
+                SelectedBasemap = itemForBasemap;
+            }
+        }
+
+        private void GeoViewDocumentChanged(object sender, object e)
+        {
+            if (e is PropertyChangedEventArgs pcea && pcea.PropertyName != nameof(SceneView.Scene) && pcea.PropertyName != nameof(MapView.Map))
+            {
+                return;
+            }
+
+            if (_geoview is MapView mv && mv.Map is INotifyPropertyChanged mapINPC)
+            {
+                // Listen for load completion
+                var listener = new WeakEventListener<INotifyPropertyChanged, object, PropertyChangedEventArgs>(mapINPC);
+                listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
+                listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
+                mapINPC.PropertyChanged += listener.OnEvent;
+            }
+            else if (_geoview is SceneView sv && sv.Scene is INotifyPropertyChanged sceneINPC)
+            {
+                // Listen for load completion
+                var listener = new WeakEventListener<INotifyPropertyChanged, object, PropertyChangedEventArgs>(sceneINPC);
+                listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
+                listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
+                sceneINPC.PropertyChanged += listener.OnEvent;
+            }
+
+            _ = HandleMapBasemapChanges();
+        }
+
+        private void HandleDocPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Basemap")
+            {
+                _ = HandleMapBasemapChanges();
             }
         }
 
@@ -129,35 +263,58 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </remarks>
         public BasemapGalleryItem SelectedBasemap
         {
-            get => _activeItem;
+            get => _selectedBasemap;
 
             set
             {
-                if (_activeItem != value)
+                if (value is BasemapGalleryItem newVal && _selectedBasemap is BasemapGalleryItem oldValue && newVal.Equals(oldValue))
                 {
-                    _activeItem = value;
+                    return;
+                }
+
+                if (_selectedBasemap != value)
+                {
+                    // Skip update if not showing basemaps as selected
+                    if (value == _galleryItems.PinnedItem && !_showUnrecognizedBasemapsAsSelected)
+                    {
+                        _selectedBasemap = null;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
+                        return;
+                    }
+
+                    _selectedBasemap = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
 
-                    if (_activeItem?.Basemap != null && GeoView is MapView mv)
+                    // Pinned item always comes from map or scene, so no need to update if they already match.
+                    if (_selectedBasemap == _galleryItems.PinnedItem)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        _galleryItems.PinnedItem = null;
+                    }
+
+                    if (_selectedBasemap?.Basemap != null && GeoView is MapView mv)
                     {
                         if (mv.Map == null)
                         {
-                            mv.Map = new Map(_activeItem.Basemap);
+                            mv.Map = new Map(_selectedBasemap.Basemap.Clone());
                         }
                         else
                         {
-                            mv.Map.Basemap = _activeItem.Basemap;
+                            mv.Map.Basemap = _selectedBasemap.Basemap.Clone();
                         }
                     }
-                    else if (_activeItem?.Basemap != null && GeoView is SceneView sv)
+                    else if (_selectedBasemap?.Basemap != null && GeoView is SceneView sv)
                     {
                         if (sv.Scene == null)
                         {
-                            sv.Scene = new Scene(_activeItem.Basemap);
+                            sv.Scene = new Scene(_selectedBasemap.Basemap.Clone());
                         }
                         else
                         {
-                            sv.Scene.Basemap = _activeItem.Basemap;
+                            sv.Scene.Basemap = _selectedBasemap.Basemap.Clone();
                         }
                     }
                 }
@@ -165,130 +322,100 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <inheritdoc/>
-        public BasemapGalleryItem this[int index] { get => _internalList[index]; set => _internalList[index] = value; }
-
-        /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
 
-        /// <inheritdoc />
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
-
-        private async Task UpdateForCurrentPortal(ArcGISPortal portal, CancellationToken token)
+        private async Task UpdateForCurrentPortal(ArcGISPortal portal)
         {
             if (portal == null)
             {
-                await ConfigureFromDefaultList(token);
+                await ConfigureFromDefaultList();
                 return;
             }
 
             Task<IEnumerable<Basemap>> getBasemapsTask;
             if (portal.PortalInfo.UseVectorBasemaps)
             {
-                getBasemapsTask = portal.GetVectorBasemapsAsync(token);
+                getBasemapsTask = portal.GetVectorBasemapsAsync();
             }
             else
             {
-                getBasemapsTask = portal.GetBasemapsAsync(token);
+                getBasemapsTask = portal.GetBasemapsAsync();
             }
 
             var basemaps = await getBasemapsTask;
 
-            _internalList.Clear();
-            basemaps.Select(basemap => new BasemapGalleryItem(basemap)).ToList().ForEach(item => _internalList.Add(item));
+            _galleryItems.Clear();
+            _galleryItems.AddRange(basemaps.Select(basemap => new BasemapGalleryItem(basemap)));
         }
 
-        private async Task ConfigureFromDefaultList(CancellationToken token)
+        private async Task ConfigureFromDefaultList()
         {
             if (_bakedInPortal == null)
             {
-                _bakedInPortal = await ArcGISPortal.CreateAsync(token);
+                _bakedInPortal = await ArcGISPortal.CreateAsync();
             }
 
             PortalGroup group = new PortalGroup(_bakedInPortal, _portalUri);
 
-            token.ThrowIfCancellationRequested();
-
             await group.LoadAsync();
 
-            token.ThrowIfCancellationRequested();
-
-            if (group.LoadStatus != LoadStatus.Loaded) { return; }
+            if (group.LoadStatus != LoadStatus.Loaded)
+            {
+                return;
+            }
 
             var searchParameters = PortalGroupContentSearchParameters.CreateForItemsOfType(PortalItemType.WebMap);
 
-            var results = await group.FindItemsAsync(searchParameters, token);
+            var results = await group.FindItemsAsync(searchParameters);
 
-            // TODO - should token be passed to gallery item to cancel loading?
-            _internalList?.Clear();
+            _galleryItems.Clear();
 
-            results.Results.Select(res => new BasemapGalleryItem(new Basemap(res))).ToList().ForEach(item => _internalList.Add(item));
+            _galleryItems.AddRange(results.Results.Select(res => new BasemapGalleryItem(new Basemap(res))));
         }
 
-        private void HandleSpatialReferenceChanged(SpatialReference sr) =>
-            _internalList?.ToList().ForEach(item => _ = item.NotifySpatialReferenceChanged(sr));
+        private void HandleSpatialReferenceChanged(BasemapGalleryItem inputItem = null)
+        {
+            SpatialReference currentSR = GeoView?.SpatialReference;
+            if (GeoView is SceneView sv && sv.Scene is Scene scene)
+            {
+                currentSR = scene.SceneViewTilingScheme == SceneViewTilingScheme.WebMercator ? SpatialReferences.WebMercator : SpatialReferences.Wgs84;
+            }
+
+            if (inputItem == null)
+            {
+                _galleryItems?.ToList().ForEach(item => _ = item.NotifySpatialReferenceChanged(currentSR));
+            }
+            else
+            {
+                _ = inputItem.NotifySpatialReferenceChanged(currentSR);
+            }
+        }
 
         private void Geoview_SpatialReferenceChanged(object sender, EventArgs e) =>
-            HandleSpatialReferenceChanged(_geoview?.SpatialReference);
+            HandleSpatialReferenceChanged();
 
-        private void InternalList_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) =>
-            CollectionChanged?.Invoke(this, e);
-
-#region interface implementation
-        int ICollection<BasemapGalleryItem>.Count => _internalList?.Count() ?? 0;
-
-        int ICollection.Count => _internalList?.Count() ?? 0;
-
-        bool IList.IsReadOnly => false;
-
-        bool IList.IsFixedSize => false;
-
-        object ICollection.SyncRoot => throw new NotImplementedException();
-
-        bool ICollection.IsSynchronized => false;
-
-        bool ICollection<BasemapGalleryItem>.IsReadOnly => throw new NotImplementedException();
-
-        object IList.this[int index] { get => _internalList[index]; set => _internalList[index] = (BasemapGalleryItem)value; }
-
-        int IList<BasemapGalleryItem>.IndexOf(BasemapGalleryItem item) => _internalList?.IndexOf(item) ?? -1;
-
-        void IList<BasemapGalleryItem>.Insert(int index, BasemapGalleryItem item) => _internalList?.Insert(index, item);
-
-        void IList<BasemapGalleryItem>.RemoveAt(int index) => _internalList?.RemoveAt(index);
-
-        void ICollection<BasemapGalleryItem>.Add(BasemapGalleryItem item) => _internalList?.Add(item);
-
-        void ICollection<BasemapGalleryItem>.Clear() => _internalList.Clear();
-
-        bool ICollection<BasemapGalleryItem>.Contains(BasemapGalleryItem item) => _internalList?.Contains(item) ?? false;
-
-        void ICollection<BasemapGalleryItem>.CopyTo(BasemapGalleryItem[] array, int arrayIndex) => _internalList?.CopyTo(array, arrayIndex);
-
-        bool ICollection<BasemapGalleryItem>.Remove(BasemapGalleryItem item) => _internalList?.Remove(item) ?? false;
-
-        IEnumerator<BasemapGalleryItem> IEnumerable<BasemapGalleryItem>.GetEnumerator() => _internalList?.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => _internalList?.GetEnumerator();
-
-        int IList.Add(object value)
+        /// <summary>
+        /// Adds the specified item to the gallery.
+        /// </summary>
+        public void Add(BasemapGalleryItem item)
         {
-            _internalList?.Insert(0, (BasemapGalleryItem)value);
-            return _internalList != null ? 0 : -1;
+            _galleryItems.Add(item);
+            HandleSpatialReferenceChanged(item);
         }
 
-        bool IList.Contains(object value) => _internalList?.Contains((BasemapGalleryItem)value) ?? false;
+        /// <summary>
+        /// Removes the specified item from the gallery. Will not affect the item representing the current map or scene if that item is not present in the gallery.
+        /// </summary>
+        public void Remove(BasemapGalleryItem item) => _galleryItems.Remove(item);
 
-        int IList.IndexOf(object value) => _internalList?.IndexOf((BasemapGalleryItem)value) ?? -1;
+        /// <summary>
+        /// Adds the specified basemap to the gallery.
+        /// </summary>
+        public void Add(Basemap basemap) => Add(new BasemapGalleryItem(basemap));
 
-        void IList.Insert(int index, object value) => _internalList?.Insert(index, (BasemapGalleryItem)value);
-
-        void IList.Remove(object value) => _internalList?.Remove((BasemapGalleryItem)value);
-
-        void ICollection.CopyTo(Array array, int index) => _internalList?.CopyTo((BasemapGalleryItem[])array, index);
-
-        void IList.Clear() => _internalList?.Clear();
-
-        void IList.RemoveAt(int index) => _internalList?.RemoveAt(index);
-#endregion interface implementation
+        /// <summary>
+        /// Removes the specified basemap from the gallery. Will not affect the basemap from the map or scene.
+        /// </summary>
+        public void Remove(Basemap basemap) => Remove(new BasemapGalleryItem(basemap));
     }
 }

@@ -104,7 +104,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
 
             if (_presentingView != null)
             {
-                _presentingView.ItemsSource = _dataSource;
+                _presentingView.ItemsSource = _dataSource.AllItems;
                 _presentingView.BindingContext = _dataSource;
                 _presentingView.SetBinding(CollectionView.SelectedItemProperty, nameof(_dataSource.SelectedBasemap), BindingMode.TwoWay);
                 HandleTemplateChange(Width);

@@ -109,10 +109,7 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.BasemapGallery
 
         private void Button_Remove_Last(object sender, RoutedEventArgs e)
         {
-            if (Gallery.Basemaps.Any())
-            {
-                Gallery.Basemaps.RemoveAt(Gallery.Basemaps.Count() - 1);
-            }
+            Gallery.Basemaps.Remove(Gallery.Basemaps.AllItems.Last());
         }
     }
 }

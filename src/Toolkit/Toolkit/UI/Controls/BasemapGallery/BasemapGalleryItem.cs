@@ -34,7 +34,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// <summary>
     /// Encompasses an element in a basemap gallery.
     /// </summary>
-    public class BasemapGalleryItem : INotifyPropertyChanged
+    public class BasemapGalleryItem : INotifyPropertyChanged, IEquatable<BasemapGalleryItem>
     {
         private RuntimeImage _thumbnailOverride;
         #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
@@ -125,6 +125,45 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
 
             IsValid = map.SpatialReference == sr;
+        }
+
+        public bool Equals(BasemapGalleryItem other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            if (other.Basemap == Basemap)
+            {
+                return true;
+            }
+
+            if (other.Basemap?.Item == Basemap?.Item)
+            {
+                return true;
+            }
+
+            if (other.Basemap?.Name == Basemap?.Name)
+            {
+                return true;
+            }
+
+            if (other.Basemap?.Uri == Basemap?.Uri)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is BasemapGalleryItem other)
+            {
+                return Equals(other);
+            }
+            return base.Equals(obj);
         }
 
         /// <summary>
