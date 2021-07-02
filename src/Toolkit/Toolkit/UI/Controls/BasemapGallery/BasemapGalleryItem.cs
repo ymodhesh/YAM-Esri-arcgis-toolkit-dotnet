@@ -249,7 +249,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return _tooltipOverride;
                 }
 
-                return Basemap.Item?.Snippet ?? string.Empty;
+                return Basemap.Item?.Snippet ?? Name;
             }
 
             set

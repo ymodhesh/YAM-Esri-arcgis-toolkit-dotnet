@@ -1,13 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:toolkit="clr-namespace:Esri.ArcGISRuntime.Toolkit.Xamarin.Forms;assembly=Esri.ArcGISRuntime.Toolkit.Xamarin.Forms"
-             xmlns:esri="clr-namespace:Esri.ArcGISRuntime.Xamarin.Forms;assembly=Esri.ArcGISRuntime.Xamarin.Forms"
-             mc:Ignorable="d"
-             Title="Bookmarks - MapView"
-             x:Class="Toolkit.Samples.Forms.Samples.BasemapGallerySample">
+<ContentPage
+    x:Class="Toolkit.Samples.Forms.Samples.BasemapGallerySample"
+    xmlns="http://xamarin.com/schemas/2014/forms"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+    xmlns:esri="clr-namespace:Esri.ArcGISRuntime.Xamarin.Forms;assembly=Esri.ArcGISRuntime.Xamarin.Forms"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:toolkit="clr-namespace:Esri.ArcGISRuntime.Toolkit.Xamarin.Forms;assembly=Esri.ArcGISRuntime.Toolkit.Xamarin.Forms"
+    Title="BasemapGallery"
+    mc:Ignorable="d">
     <ContentPage.Content>
         <ScrollView>
             <Grid>
@@ -16,8 +17,12 @@
                     <RowDefinition Height="200" />
                 </Grid.RowDefinitions>
 
-                <esri:MapView x:Name="MyMapView" Grid.Row="0"/>
-                <toolkit:BasemapGallery x:Name="gallery" GeoView="{Binding Source={x:Reference MyMapView}}" Grid.Row="1"/>
+                <esri:MapView x:Name="MyMapView" Grid.Row="0" />
+                <toolkit:BasemapGallery
+                    x:Name="gallery"
+                    Grid.Row="1"
+                    GeoView="{Binding Source={x:Reference MyMapView}}"
+                    ViewStyleWidthThreshold="600" />
             </Grid>
         </ScrollView>
 

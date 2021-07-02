@@ -160,15 +160,19 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             UpdateFullView();
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
+        internal bool UpdatingCollectionFlag = false;
 
         /// <summary>
         /// Clears all items, except for <see cref="PinnedItem"/>.
         /// </summary>
         public void Clear()
         {
+            // working around weird collection behavior on Forms UWP
+            UpdatingCollectionFlag = true;
             _unpinnedItems.Clear();
             UpdateFullView();
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            UpdatingCollectionFlag = false;
         }
 
         /// <summary>

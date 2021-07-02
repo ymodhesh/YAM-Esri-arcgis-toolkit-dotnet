@@ -226,7 +226,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             if (_geoview is MapView mv && mv.Map is INotifyPropertyChanged mapINPC)
             {
                 // Listen for load completion
-                var listener = new WeakEventListener<INotifyPropertyChanged, object, PropertyChangedEventArgs>(mapINPC);
+                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(mapINPC);
                 listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
                 listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
                 mapINPC.PropertyChanged += listener.OnEvent;
@@ -234,7 +234,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             else if (_geoview is SceneView sv && sv.Scene is INotifyPropertyChanged sceneINPC)
             {
                 // Listen for load completion
-                var listener = new WeakEventListener<INotifyPropertyChanged, object, PropertyChangedEventArgs>(sceneINPC);
+                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(sceneINPC);
                 listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
                 listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
                 sceneINPC.PropertyChanged += listener.OnEvent;
@@ -243,7 +243,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             _ = HandleMapBasemapChanges();
         }
 
-        private void HandleDocPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void HandleDocPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Basemap")
             {
@@ -264,6 +264,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             set
             {
                 if (value is BasemapGalleryItem newVal && _selectedBasemap is BasemapGalleryItem oldValue && newVal.Equals(oldValue))
+                {
+                    return;
+                }
+
+                // Workaround for annoying Forms UWP listview binding behavior
+                if (_galleryItems.UpdatingCollectionFlag)
                 {
                     return;
                 }

@@ -47,9 +47,14 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
             {
                 StackLayout parentLayout = new StackLayout() { Orientation = StackOrientation.Vertical, WidthRequest = 128 };
                 parentLayout.Padding = new Thickness(8);
-                Image thumbnail = new Image { WidthRequest = 64, HeightRequest = 64, Margin = new Thickness(0, 0, 0, 8), Aspect = Aspect.AspectFill };
+                Grid imageContainer = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+                Image fallback = new Image { WidthRequest = 32, HeightRequest = 32, Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
+                fallback.Source = ImageSource.FromResource("Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Assets.BasemapLight.png", typeof(BasemapGallery).Assembly);
+                Image thumbnail = new Image { WidthRequest = 64, HeightRequest = 64, Aspect = Aspect.AspectFill };
                 Label nameLabel = new Label { FontSize = 11, TextColor = Color.FromHex("#6e6e6e"), HorizontalTextAlignment = TextAlignment.Center };
-                parentLayout.Children.Add(thumbnail);
+                imageContainer.Children.Add(fallback);
+                imageContainer.Children.Add(thumbnail);
+                parentLayout.Children.Add(imageContainer);
                 parentLayout.Children.Add(nameLabel);
 
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));
@@ -63,12 +68,17 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
-                Image thumbnail = new Image { WidthRequest = 64, HeightRequest = 64, Margin = new Thickness(0, 8, 8, 8), Aspect = Aspect.AspectFill };
+                Grid imageContainer = new Grid();
+                Image fallback = new Image { WidthRequest = 32, HeightRequest = 32, Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
+                fallback.Source = ImageSource.FromResource("Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Assets.BasemapLight.png", typeof(BasemapGallery).Assembly);
+                Image thumbnail = new Image { WidthRequest = 64, HeightRequest = 64, Aspect = Aspect.AspectFill };
                 Label nameLabel = new Label { FontSize = 11, TextColor = Color.FromHex("#6e6e6e"), VerticalOptions = LayoutOptions.Center, VerticalTextAlignment = TextAlignment.Center };
-                parentLayout.Children.Add(thumbnail);
+                imageContainer.Children.Add(fallback);
+                imageContainer.Children.Add(thumbnail);
+                parentLayout.Children.Add(imageContainer);
                 parentLayout.Children.Add(nameLabel);
 
-                thumbnail.SetValue(Grid.ColumnProperty, 1);
+                imageContainer.SetValue(Grid.ColumnProperty, 1);
                 nameLabel.SetValue(Grid.ColumnProperty, 2);
 
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));

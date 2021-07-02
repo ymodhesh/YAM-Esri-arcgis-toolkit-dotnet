@@ -14,6 +14,7 @@ namespace Toolkit.Samples.Forms.Samples
         public BasemapGallerySample()
         {
             InitializeComponent();
+            MyMapView.Map = new Map(BasemapStyle.ArcGISImagery);
         }
     }
 }
