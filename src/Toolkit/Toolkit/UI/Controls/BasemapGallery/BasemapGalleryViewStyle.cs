@@ -14,7 +14,11 @@
 //  *   limitations under the License.
 //  ******************************************************************************/
 
+#if XAMARIN_FORMS
+namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
+#else
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
+#endif
 {
     /// <summary>
     /// The view style of a basemap gallery.

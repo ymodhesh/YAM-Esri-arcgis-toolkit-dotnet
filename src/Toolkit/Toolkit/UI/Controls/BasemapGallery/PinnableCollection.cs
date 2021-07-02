@@ -21,7 +21,11 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 
+#if XAMARIN_FORMS
+namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
+#else
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
+#endif
 {
     /// <summary>
     /// Modifiable, observable collection with pinning. A single <see cref="PinnedItem"/> will remain at the top of the list.

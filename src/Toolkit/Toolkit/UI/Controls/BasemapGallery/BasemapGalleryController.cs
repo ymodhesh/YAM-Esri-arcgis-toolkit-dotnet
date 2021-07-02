@@ -30,7 +30,11 @@ using Esri.ArcGISRuntime.Toolkit.Internal;
 using Esri.ArcGISRuntime.UI.Controls;
 #endif
 
+#if XAMARIN_FORMS
+namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
+#else
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
+#endif
 {
     /// <summary>
     /// Modifiable, observable collection of basemaps. Note, collection contents will be reset when a portal is set.

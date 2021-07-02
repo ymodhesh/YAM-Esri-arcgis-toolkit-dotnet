@@ -28,7 +28,11 @@ using Windows.UI.Xaml.Media;
 using System.Windows.Media;
 #endif
 
+#if XAMARIN_FORMS
+namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
+#else
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
+#endif
 {
     /// <summary>
     /// Encompasses an element in a basemap gallery.
