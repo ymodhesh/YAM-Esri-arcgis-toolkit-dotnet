@@ -36,8 +36,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     Path = new PropertyPath(nameof(bmgi.IsValid)),
                     Mode = BindingMode.OneWay,
-                    Source = bmgi
+                    Source = bmgi,
                 };
+
                 (element as ListViewItem).SetBinding(IsEnabledProperty, isenabledBinding);
                 (element as ListViewItem).SetBinding(IsHitTestVisibleProperty, isenabledBinding);
             }

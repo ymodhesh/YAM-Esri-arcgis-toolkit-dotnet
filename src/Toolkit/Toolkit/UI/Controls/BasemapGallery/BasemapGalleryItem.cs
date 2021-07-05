@@ -47,6 +47,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private string? _nameOverride;
         private bool _isLoading = false;
         private bool _isValid = true;
+        private bool _isPinned = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -113,6 +114,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         internal async Task NotifySpatialReferenceChanged(SpatialReference? sr)
         {
+            if (_isPinned)
+            {
+                return;
+            }
+
             if (sr == null)
             {
                 IsValid = true;
@@ -184,13 +190,29 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public bool IsValid
         {
-            get => _isValid;
+            get => _isPinned ? false : _isValid;
             private set
             {
                 if (_isValid != value)
                 {
                     _isValid = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsValid)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this item represents a pinned item.
+        /// </summary>
+        public bool IsPinned
+        {
+            get => _isPinned;
+            set
+            {
+                if (_isPinned != value)
+                {
+                    _isPinned = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPinned)));
                 }
             }
         }

@@ -30,7 +30,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// <summary>
     /// Modifiable, observable collection with pinning. A single <see cref="PinnedItem"/> will remain at the top of the list.
     /// </summary>
-    public class PinnableCollection<T> : IList<T>, INotifyCollectionChanged, INotifyPropertyChanged, IList
+    public sealed class PinnableCollection<T> : IList<T>, INotifyCollectionChanged, INotifyPropertyChanged, IList
         where T : class
     {
         private T? _pinnedItem;

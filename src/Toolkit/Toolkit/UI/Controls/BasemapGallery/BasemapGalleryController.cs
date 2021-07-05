@@ -46,7 +46,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private GeoView? _geoview;
         private ArcGISPortal? _portal;
         private ArcGISPortal? _bakedInPortal;
-        private bool _showUnrecognizedBasemapsAsSelected = true;
 
         private readonly PinnableCollection<BasemapGalleryItem> _galleryItems = new PinnableCollection<BasemapGalleryItem>();
 #if NETFX_CORE
@@ -214,9 +213,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
             else
             {
-                // If current basemap isn't in collection, pin it and select it
+                // If current basemap isn't in collection, pin it
+                itemForBasemap.IsPinned = true;
                 _galleryItems.PinnedItem = itemForBasemap;
-                SelectedBasemap = itemForBasemap;
+                SelectedBasemap = null;
             }
         }
 
@@ -280,8 +280,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
                 if (_selectedBasemap != value)
                 {
-                    // Skip update if not showing basemaps as selected
-                    if (value == _galleryItems.PinnedItem && !_showUnrecognizedBasemapsAsSelected)
+                    // Skip update, do not show pinned basemaps as selected
+                    if (value == _galleryItems.PinnedItem)
                     {
                         _selectedBasemap = null;
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));

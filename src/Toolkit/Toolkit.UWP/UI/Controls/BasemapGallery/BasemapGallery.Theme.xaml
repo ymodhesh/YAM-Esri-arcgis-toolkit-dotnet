@@ -53,6 +53,11 @@
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
                                 ContentTransitions="{TemplateBinding ContentTransitions}"
                                 Foreground="{TemplateBinding Foreground}" />
+                          <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                  Background="{ThemeResource ControlBackground}"
+                                  x:Name="ContentDisabledScrim"
+                                  IsHitTestVisible ="false"
+                                  Opacity="0" />
                         </Grid>
 
                         <VisualStateManager.VisualStateGroups>
@@ -99,7 +104,7 @@
                                 <VisualState x:Name="Disabled">
                                     <Storyboard>
                                         <DoubleAnimation
-                                            Storyboard.TargetName="ContentBorder"
+                                            Storyboard.TargetName="ContentDisabledScrim"
                                             Storyboard.TargetProperty="Opacity"
                                             To="{ThemeResource ListViewItemDisabledThemeOpacity}"
                                             Duration="0" />
@@ -144,6 +149,7 @@
                                 <Image
                                     Width="62"
                                     Height="62"
+                                    Opacity ="1"
                                     Source="{Binding ThumbnailImageSource, Mode=OneWay}"
                                     Stretch="UniformToFill" />
                             </Grid>
