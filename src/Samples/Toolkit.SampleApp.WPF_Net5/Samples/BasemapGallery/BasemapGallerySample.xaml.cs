@@ -1,5 +1,6 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using System;
 using System.Collections.Generic;
@@ -115,6 +116,30 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.BasemapGallery
         private void Button_Remove_Last(object sender, RoutedEventArgs e)
         {
             Gallery.Controller.Remove(Gallery.Controller.Basemaps.Last());
+        }
+
+        private async void Button_Load_AGOL(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+        }
+
+        private async void Button_Load_Portal(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync(new Uri("https://arcgisruntimesdk.maps.arcgis.com/"));
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
         }
     }
 }

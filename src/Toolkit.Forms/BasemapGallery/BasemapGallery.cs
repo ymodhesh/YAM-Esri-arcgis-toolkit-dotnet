@@ -14,6 +14,7 @@
 //  *   limitations under the License.
 //  ******************************************************************************/
 
+using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using Esri.ArcGISRuntime.Xamarin.Forms;
 using Xamarin.Forms;
@@ -177,6 +178,15 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         public BasemapGalleryController Controller => _controller;
 
         /// <summary>
+        /// Gets or sets the portal used to populate the basemap list.
+        /// </summary>
+        public ArcGISPortal Portal
+        {
+            get => (ArcGISPortal)GetValue(PortalProperty);
+            set => SetValue(PortalProperty, value);
+        }
+
+        /// <summary>
         /// Gets or sets the data template used to show basemaps in a list.
         /// </summary>
         /// <seealso cref="GalleryViewStyle"/>
@@ -224,6 +234,12 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         }
 
         /// <summary>
+        /// Identifies the <see cref="Portal"/> bindable property.
+        /// </summary>
+        public static readonly BindableProperty PortalProperty =
+            BindableProperty.Create(nameof(Portal), typeof(ArcGISPortal), typeof(BasemapGallery), null, propertyChanged: PortalChanged);
+
+        /// <summary>
         /// Identifies the <see cref="GeoView"/> bindable property.
         /// </summary>
         public static readonly BindableProperty GeoViewProperty =
@@ -258,6 +274,12 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// </summary>
         private static void GeoViewChanged(BindableObject sender, object oldValue, object newValue) =>
             ((BasemapGallery)sender)._controller.GeoView = newValue as GeoView;
+
+        /// <summary>
+        /// Handles property changes for the <see cref="Portal"/> bindable property.
+        /// </summary>
+        private static void PortalChanged(BindableObject sender, object oldValue, object newValue) =>
+            ((BasemapGallery)sender)._controller.Portal = newValue as ArcGISPortal;
 
         /// <summary>
         /// Handles property changes for the bindable properties that can trigger a style or template change.

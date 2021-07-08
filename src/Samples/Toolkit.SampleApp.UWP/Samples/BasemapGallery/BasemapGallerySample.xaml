@@ -40,8 +40,8 @@
                 <Button Content="Null Map" Click="Button_Load_Map_Null" />
                 <Button Content="Null Scene" Click="Button_Load_Scene_Null" />
                 <TextBlock Text="Set a new:" />
-                <Button Content="ArcGIS Online Portal" IsEnabled="False" />
-                <Button Content="Runtime SDK Portal" IsEnabled="False" />
+                <Button Content="ArcGIS Online" IsEnabled="False" Click="Button_Load_AGOL" />
+                <Button Content="Portal" IsEnabled="False" Click="Button_Load_Portal" />
                 <TextBlock Text="Manipulate list by:" />
                 <Button Content="Adding an Item" Click="Button_Add_Last" />
                 <Button Content="Removing an Item" Click="Button_Remove_Last" />

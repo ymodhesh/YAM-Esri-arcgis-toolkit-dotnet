@@ -1,5 +1,6 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using Esri.ArcGISRuntime.UI.Controls;
 using System;
@@ -105,6 +106,30 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.BasemapGallery
                 Thumbnail = new ArcGISRuntime.UI.RuntimeImage(new Uri("https://www.esri.com/content/dam/esrisites/en-us/home/homepage-tile-arcgis-collaboration.jpg"))
             };
             Gallery.Controller.Basemaps.Add(item);
+        }
+
+        private async void Button_Load_AGOL(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+        }
+
+        private async void Button_Load_Portal(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync(new Uri("https://arcgisruntimesdk.maps.arcgis.com/"));
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
         }
 
         private void Button_Remove_Last(object sender, RoutedEventArgs e)

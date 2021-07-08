@@ -1,5 +1,6 @@
 ﻿using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Portal;
 using Esri.ArcGISRuntime.Toolkit.UI;
 using Esri.ArcGISRuntime.Toolkit.Xamarin.Forms;
 using Esri.ArcGISRuntime.Xamarin.Forms;
@@ -59,6 +60,30 @@ namespace Toolkit.Samples.Forms.Samples
         private void Button_Remove_Item(object sender, EventArgs e)
         {
             Gallery.Controller.Remove(Gallery.Controller.Basemaps.Last());
+        }
+
+        private async void Button_Load_AGOL(object sender, EventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+        }
+
+        private async void Button_Load_Portal(object sender, EventArgs e)
+        {
+            try
+            {
+                Gallery.Portal = await ArcGISPortal.CreateAsync(new Uri("https://arcgisruntimesdk.maps.arcgis.com/"));
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
         }
     }
 }
