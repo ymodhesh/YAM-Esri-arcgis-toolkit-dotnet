@@ -48,6 +48,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private bool _isLoading = false;
         private bool _isValid = true;
         private bool _isPinned = false;
+        private bool _isSelected = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -197,6 +198,23 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     _isValid = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsValid)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this basemap is currently selected.
+        /// </summary>
+        /// <remarks>This is used to implement custom selection behavior on Xamarin.Forms.</remarks>
+        public bool IsSelected
+        {
+            get => _isSelected;
+            internal set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
                 }
             }
         }

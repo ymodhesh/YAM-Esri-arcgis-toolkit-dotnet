@@ -283,22 +283,21 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     // Skip update, do not show pinned basemaps as selected
                     if (value == _galleryItems.PinnedItem)
                     {
+                        if (_selectedBasemap != null){ _selectedBasemap.IsSelected = false; }
                         _selectedBasemap = null;
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
                         return;
                     }
 
+                    if (_selectedBasemap != null) {_selectedBasemap.IsSelected = false; }
                     _selectedBasemap = value;
+                    if (_selectedBasemap != null) {_selectedBasemap.IsSelected = true; }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
 
                     // Pinned item always comes from map or scene, so no need to update if they already match.
                     if (_selectedBasemap == _galleryItems.PinnedItem)
                     {
                         return;
-                    }
-                    else
-                    {
-                        _galleryItems.PinnedItem = null;
                     }
 
                     if (_selectedBasemap?.Basemap != null && GeoView is MapView mv)

@@ -40,12 +40,25 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         private static readonly DataTemplate DefaultListDataTemplate;
         private static readonly DataTemplate DefaultGridDataTemplate;
         private static readonly ControlTemplate DefaultControlTemplate;
+        private static readonly BoolToOpacityConverter OpacityConverter;
+
+        private static readonly TapGestureRecognizer tapGestureRecognizer;
 
         static BasemapGallery()
         {
+            OpacityConverter = new BoolToOpacityConverter();
+            tapGestureRecognizer = new TapGestureRecognizer();
+            tapGestureRecognizer.NumberOfTapsRequired = 1;
+            tapGestureRecognizer.Tapped += TapGestureRecognizer_Tapped;
+
             DefaultGridDataTemplate = new DataTemplate(() =>
             {
-                StackLayout parentLayout = new StackLayout() { Orientation = StackOrientation.Vertical, WidthRequest = 128 };
+                Grid outerScrimContainer = new Grid();
+                outerScrimContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = 128 });
+
+                Grid selectionBackground = new Grid { BackgroundColor = Color.Accent };
+
+                StackLayout parentLayout = new StackLayout() { Orientation = StackOrientation.Vertical };
                 parentLayout.Padding = new Thickness(8);
                 Grid imageContainer = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                 Image fallback = new Image { WidthRequest = 32, HeightRequest = 32, Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
@@ -57,9 +70,22 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 parentLayout.Children.Add(imageContainer);
                 parentLayout.Children.Add(nameLabel);
 
+                Grid scrimGrid = new Grid { BackgroundColor = Color.White };
+                scrimGrid.SetValue(Grid.ColumnSpanProperty, 3);
+                parentLayout.Children.Add(scrimGrid);
+
+                outerScrimContainer.Children.Add(selectionBackground);
+                outerScrimContainer.Children.Add(parentLayout);
+                outerScrimContainer.Children.Add(scrimGrid);
+
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));
                 nameLabel.SetBinding(Label.TextProperty, nameof(BasemapGalleryItem.Name));
-                return parentLayout;
+                scrimGrid.SetBinding(OpacityProperty, nameof(BasemapGalleryItem.IsValid), converter: OpacityConverter);
+                selectionBackground.SetBinding(IsVisibleProperty, nameof(BasemapGalleryItem.IsSelected));
+
+                outerScrimContainer.GestureRecognizers.Add(tapGestureRecognizer);
+
+                return outerScrimContainer;
             });
 
             DefaultListDataTemplate = new DataTemplate(() =>
@@ -68,6 +94,8 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
+
+                Grid selectionBackground = new Grid { BackgroundColor = Color.Accent };
                 Grid imageContainer = new Grid();
                 Image fallback = new Image { WidthRequest = 32, HeightRequest = 32, Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
                 fallback.Source = ImageSource.FromResource("Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Assets.BasemapLight.png", typeof(BasemapGallery).Assembly);
@@ -75,21 +103,44 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 Label nameLabel = new Label { FontSize = 11, TextColor = Color.FromHex("#6e6e6e"), VerticalOptions = LayoutOptions.Center, VerticalTextAlignment = TextAlignment.Center };
                 imageContainer.Children.Add(fallback);
                 imageContainer.Children.Add(thumbnail);
+
+                selectionBackground.SetValue(Grid.ColumnSpanProperty, 3);
+                parentLayout.Children.Add(selectionBackground);
+
                 parentLayout.Children.Add(imageContainer);
                 parentLayout.Children.Add(nameLabel);
+
+                Grid scrimGrid = new Grid { BackgroundColor = Color.White };
+                scrimGrid.SetValue(Grid.ColumnSpanProperty, 3);
+                parentLayout.Children.Add(scrimGrid);
 
                 imageContainer.SetValue(Grid.ColumnProperty, 1);
                 nameLabel.SetValue(Grid.ColumnProperty, 2);
 
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));
                 nameLabel.SetBinding(Label.TextProperty, nameof(BasemapGalleryItem.Name));
+                scrimGrid.SetBinding(OpacityProperty, nameof(BasemapGalleryItem.IsValid), converter: OpacityConverter);
+                selectionBackground.SetBinding(IsVisibleProperty, nameof(BasemapGalleryItem.IsSelected));
+
+                parentLayout.GestureRecognizers.Add(tapGestureRecognizer);
+
                 return parentLayout;
             });
 
             string template = @"<ControlTemplate xmlns=""http://xamarin.com/schemas/2014/forms"" xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml"" xmlns:esriTK=""clr-namespace:Esri.ArcGISRuntime.Toolkit.Xamarin.Forms"">
-                                    <CollectionView x:Name=""PresentingView"" HorizontalOptions=""FillAndExpand"" VerticalOptions=""FillAndExpand"" SelectionMode=""Single"" />
+                                    <CollectionView x:Name=""PresentingView"" HorizontalOptions=""FillAndExpand"" VerticalOptions=""FillAndExpand"" SelectionMode=""None"" />
                                 </ControlTemplate>";
             DefaultControlTemplate = Extensions.LoadFromXaml(new ControlTemplate(), template);
+        }
+
+        private static void TapGestureRecognizer_Tapped(object sender, System.EventArgs e)
+        {
+            if (sender is View sendingView && sendingView.BindingContext is BasemapGalleryItem bmgi
+                && !bmgi.IsSelected && bmgi.IsValid
+                && sendingView.Parent.BindingContext is BasemapGalleryController controller)
+            {
+                controller.SelectedBasemap = bmgi;
+            }
         }
 
         /// <summary>
@@ -99,7 +150,6 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         {
             ListItemTemplate = DefaultListDataTemplate;
             GridItemTemplate = DefaultGridDataTemplate;
-
             ControlTemplate = DefaultControlTemplate;
         }
 
@@ -120,6 +170,11 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 HandleTemplateChange(Width);
             }
         }
+
+        /// <summary>
+        /// Gets the data source for the gallery.
+        /// </summary>
+        public BasemapGalleryController Controller => _controller;
 
         /// <summary>
         /// Gets or sets the data template used to show basemaps in a list.

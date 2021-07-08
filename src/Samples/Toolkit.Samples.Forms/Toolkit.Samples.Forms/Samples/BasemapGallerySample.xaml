@@ -10,21 +10,43 @@
     Title="BasemapGallery"
     mc:Ignorable="d">
     <ContentPage.Content>
-        <ScrollView>
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="200" />
-                </Grid.RowDefinitions>
+        <Grid BackgroundColor="{AppThemeBinding Dark=Black, Light=White}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="200" />
+            </Grid.RowDefinitions>
+            <StackLayout Orientation="Vertical" Grid.Row="0">
+                <Label Text="Width threshold:" />
+                <Slider HorizontalOptions="FillAndExpand" Minimum="0" Maximum="1000" Value="400" x:Name="ThresholdSlider" />
+            </StackLayout>
+            <StackLayout Orientation="Horizontal" Grid.Row="1">
+                <Label Text="Attach to:" />
+                <Button Text="SceneView" Clicked="Button_Select_Scene" />
+                <Button Text="MapView" Clicked="Button_Select_Map" />
+            </StackLayout>
+            <StackLayout Orientation="Horizontal" Grid.Row="2">
+                <Label Text="Load a new:" />
+                <Button Text="Scene" Clicked="Button_Load_Scene" />
+                <Button Text="Map (WM)" Clicked="Button_Load_Map_WM" />
+                <Button Text="Map (WGS84)" Clicked="Button_Load_Map_WGS" />
+            </StackLayout>
+            <StackLayout Orientation="Horizontal" Grid.Row="3">
+                <Button Text="ArcGIS Online"  />
+                <Button Text="Custom Portal" />
+                <Button Text="+" Clicked="Button_Add_Item" />
+                <Button Text="-" Clicked="Button_Remove_Item" />
+            </StackLayout>
 
-                <esri:MapView x:Name="MyMapView" Grid.Row="0" />
-                <toolkit:BasemapGallery
-                    x:Name="gallery"
-                    Grid.Row="1"
-                    GeoView="{Binding Source={x:Reference MyMapView}}"
-                    ViewStyleWidthThreshold="600" />
-            </Grid>
-        </ScrollView>
+            <esri:MapView  x:Name="MyMapView" Grid.Row="4" />
+            <esri:SceneView x:Name="MySceneView" Grid.Row="4" IsVisible="False" />
 
+            <toolkit:BasemapGallery x:Name="Gallery" 
+                                    Grid.Row="5"
+                                    ViewStyleWidthThreshold="{Binding Source={x:Reference ThresholdSlider}, Path=Value, Mode=OneWay}" />
+        </Grid>
     </ContentPage.Content>
 </ContentPage>
