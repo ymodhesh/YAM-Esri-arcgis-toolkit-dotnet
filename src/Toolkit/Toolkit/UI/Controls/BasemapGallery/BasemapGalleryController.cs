@@ -299,6 +299,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     {
                         return;
                     }
+                    else if (_selectedBasemap != null && _galleryItems.PinnedItem != null)
+                    {
+                        _galleryItems.PinnedItem.IsSelected = false;
+                        _galleryItems.PinnedItem = null;
+                    }
 
                     if (_selectedBasemap?.Basemap != null && GeoView is MapView mv)
                     {
