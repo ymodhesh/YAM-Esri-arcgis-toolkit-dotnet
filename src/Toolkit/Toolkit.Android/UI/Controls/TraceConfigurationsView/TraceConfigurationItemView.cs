@@ -19,11 +19,12 @@ using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.UtilityNetworks;
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
-    /// View class used to render the individual entry for a <see cref="TraceConfiguration" /> shown by <see cref="TraceConfigurationsAdapter" />.
+    /// View class used to render the individual entry for a <see cref="UtilityNamedTraceConfiguration" /> shown by <see cref="TraceConfigurationsAdapter" />.
     /// </summary>
     internal class TraceConfigurationItemView : LinearLayout
     {

@@ -1,0 +1,222 @@
+﻿<UserControl x:Class="Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView.TraceConfigurationsViewSample"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
+             xmlns:controls="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls;assembly=Esri.ArcGISRuntime.Toolkit"
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+    <UserControl.Resources>
+        <DataTemplate x:Key="ItemTemplateOne">
+            <TextBlock Text="{Binding Name}"
+                       HorizontalAlignment="Center"
+                       Foreground="Red" />
+        </DataTemplate>
+        <DataTemplate x:Key="ItemTemplateTwo">
+            <TextBlock Background="Red"
+                       Foreground="White"
+                       Text="{Binding Name}"
+                       HorizontalAlignment="Center" />
+        </DataTemplate>
+        <DataTemplate x:Key="ResultItemTemplate">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Function.NetworkAttribute.Name}"
+                           FontWeight="Bold"
+                           Margin="2" />
+                <TextBlock Text="{Binding Result}"
+                           Margin="2"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+        </DataTemplate>
+        <ContentControl x:Key="TerminalPickerTemplate">
+            <StackPanel Orientation="Horizontal">
+                <ComboBox ItemsSource="{Binding Element.AssetType.TerminalConfiguration.Terminals}"
+                          SelectedItem="{Binding Element.Terminal, Mode=TwoWay}"
+                          Margin="2">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"
+                                       FontWeight="Bold"
+                                       Margin="2" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Content="Select"
+                        Command="{Binding SelectCommand}"
+                        CommandParameter="{Binding Element}"
+                        Margin="2"
+                        Grid.Row="2" />
+            </StackPanel>
+        </ContentControl>
+        <Style TargetType="ComboBoxItem"
+               x:Key="AlternateItemContainerStyle">
+            <Setter Property="Padding"
+                    Value="8" />
+            <Setter Property="Cursor"
+                    Value="Hand" />
+            <Setter Property="Background"
+                    Value="Transparent" />
+            <Setter Property="BorderBrush"
+                    Value="Transparent" />
+            <Setter Property="BorderThickness"
+                    Value="0" />
+            <Setter Property="HorizontalContentAlignment"
+                    Value="Stretch" />
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center" />
+            <Setter Property="Margin"
+                    Value="0" />
+            <Setter Property="Foreground"
+                    Value="DarkSlateGray" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Border x:Name="Bd"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver"
+                                               Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd"
+                                        Property="Background"
+                                        Value="SlateBlue" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Selector.IsSelectionActive"
+                                               Value="False" />
+                                    <Condition Property="IsSelected"
+                                               Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd"
+                                        Property="Background"
+                                        Value="SlateBlue" />
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Selector.IsSelectionActive"
+                                               Value="True" />
+                                    <Condition Property="IsSelected"
+                                               Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd"
+                                        Property="Background"
+                                        Value="LightGray" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled"
+                                     Value="False">
+                                <Setter TargetName="Bd"
+                                        Property="TextElement.Foreground"
+                                        Value="LightGray" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ItemsControlStyle"
+               TargetType="{x:Type ItemsControl}">
+            <Setter Property="Padding"
+                    Value="8" />
+            <Setter Property="Cursor"
+                    Value="Hand" />
+            <Setter Property="Background"
+                    Value="Transparent" />
+            <Setter Property="BorderBrush"
+                    Value="Transparent" />
+            <Setter Property="BorderThickness"
+                    Value="0" />
+            <Setter Property="HorizontalContentAlignment"
+                    Value="Stretch" />
+            <Setter Property="VerticalContentAlignment"
+                    Value="Center" />
+            <Setter Property="Margin"
+                    Value="0" />
+            <Setter Property="Foreground"
+                    Value="DarkSlateGray" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ItemsControl}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="true">
+                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="250" />
+        </Grid.ColumnDefinitions>
+        <esri:SceneView x:Name="MySceneView"
+                        Grid.Column="0"
+                        Visibility="Hidden" />
+        <esri:MapView x:Name="MyMapView"
+                      Grid.Column="0" />
+        <controls:TraceConfigurationsView x:Name="TraceConfigurationsView"
+                                          Grid.Column="1"
+                                          GeoView="{Binding ElementName=MyMapView}" />
+        <Border Grid.Column="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Width="300"
+                Padding="10"
+                Margin="0,15, 15, 0"
+                Background="White"
+                BorderBrush="Black"
+                BorderThickness="1">
+            <Border.Resources>
+                <Style TargetType="TextBlock">
+                    <Setter Property="FontWeight"
+                            Value="SemiBold" />
+                    <Setter Property="HorizontalAlignment"
+                            Value="Right" />
+                    <Setter Property="Padding"
+                            Value="0, 0, 5, 0" />
+                </Style>
+            </Border.Resources>
+            <StackPanel>
+                <Button Content="Set GeoView"
+                        Click="OnSetGeoView" />
+                <Button Content="Update GeoModel"
+                        Click="OnSetGeoModel" />
+                <Button Content="Add/Remove UtilityNetwork"
+                        Click="OnAddRemoveUtilityNetwork" />
+                <ToggleButton Content="AutoZoomToTraceResults"
+                              IsChecked="{Binding ElementName=TraceConfigurationsView, Path=AutoZoomToTraceResults}" />
+                <Button Content="Update Symbols"
+                        Click="OnUpdateSymbols" />
+                <Button Content="Add/Remove Event Subscription"
+                        Click="OnAddRemoveEventSubscription" />
+                <Button Content="Set ItemTemplate"
+                        Click="OnSetItemTemplate" />
+                <Button Content="Set ItemContainerStyle"
+                        Click="OnSetItemContainerStyle" />
+                <Button Content="Set TerminalPickerTemplate"
+                        Click="OnSetTerminalPickerTemplate" />
+                <Button Content="Set ResultItemTemplate"
+                        Click="OnSetResultItemTemplate" />
+                <Button Content="Set ResultItemContainerStyle"
+                        Click="OnSetResultItemContainerStyle" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

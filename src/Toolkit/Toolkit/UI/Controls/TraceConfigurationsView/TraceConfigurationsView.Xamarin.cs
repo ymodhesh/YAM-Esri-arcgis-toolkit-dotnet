@@ -16,8 +16,10 @@
 
 #if XAMARIN
 
-using System.Collections.Generic;
-using Esri.ArcGISRuntime.Mapping;
+using System;
+using System.Threading.Tasks;
+using Esri.ArcGISRuntime.Geometry;
+using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI.Controls;
 using Esri.ArcGISRuntime.UtilityNetworks;
 
@@ -25,6 +27,22 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     public partial class TraceConfigurationsView
     {
+        private void InitializeComponent()
+        {
+            _synchronizationContext = System.Threading.SynchronizationContext.Current ?? new System.Threading.SynchronizationContext();
+            _propertyChangedAction = new Action<string>((propertyName) =>
+            {
+                if (propertyName == nameof(IsBusy))
+                {
+                    // TODO
+                }
+                else if (propertyName == nameof(Status))
+                {
+                    // TODO
+                }
+            });
+        }
+
         private GeoView _geoView;
 
         private GeoView GeoViewImpl
@@ -34,29 +52,87 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 if (_geoView != value)
                 {
+                    var oldGeoView = _geoView;
                     _geoView = value;
-                    _dataSource.SetGeoView(_geoView);
+                    UpdateGeoView(oldGeoView, _geoView);
                 }
             }
         }
 
-        private IEnumerable<UtilityNamedTraceConfiguration> _TraceConfigurationsOverrideImpl;
+        private bool _autoZoomToTraceResults = true;
 
-        private IEnumerable<UtilityNamedTraceConfiguration> TraceConfigurationsOverrideImpl
+        private bool AutoZoomToTraceResultsImpl
         {
-            get
-            {
-                return _TraceConfigurationsOverrideImpl;
-            }
+            get => _autoZoomToTraceResults;
+            set => _autoZoomToTraceResults = value;
+        }
 
+        private Symbol _startingLocationSymbol;
+
+        private Symbol StartingLocationSymbolImpl
+        {
+            get => _startingLocationSymbol;
             set
             {
-                if (value != _TraceConfigurationsOverrideImpl)
+                if (_startingLocationSymbol != value)
                 {
-                    _TraceConfigurationsOverrideImpl = value;
-                    _dataSource.SetOverrideList(value);
+                    _startingLocationSymbol = value;
+                    UpdateTraceLocationSymbol(_startingLocationSymbol);
                 }
             }
+        }
+
+        private Symbol _resultPointSymbol;
+
+        private Symbol ResultPointSymbolImpl
+        {
+            get => _resultPointSymbol;
+            set
+            {
+                if (_resultPointSymbol != value)
+                {
+                    _resultPointSymbol = value;
+                    UpdateResultSymbol(_resultPointSymbol, GeometryType.Multipoint);
+                }
+            }
+        }
+
+        private Symbol _resultLineSymbol;
+
+        private Symbol ResultLineSymbolImpl
+        {
+            get => _resultLineSymbol;
+            set
+            {
+                if (_resultLineSymbol != value)
+                {
+                    _resultLineSymbol = value;
+                    UpdateResultSymbol(_resultLineSymbol, GeometryType.Polyline);
+                }
+            }
+        }
+
+        private Symbol _resultFillSymbol;
+
+        private Symbol ResultFillSymbolImpl
+        {
+            get => _resultFillSymbol;
+            set
+            {
+                if (_resultFillSymbol != value)
+                {
+                    _resultFillSymbol = value;
+                    UpdateResultSymbol(_resultFillSymbol, GeometryType.Polygon);
+                }
+            }
+        }
+
+        private Task<UtilityElement> GetElementWithTerminalAsync(MapPoint location, UtilityElement element)
+        {
+            var tcs = new TaskCompletionSource<UtilityElement>();
+
+            // TODO
+            return tcs.Task;
         }
     }
 }

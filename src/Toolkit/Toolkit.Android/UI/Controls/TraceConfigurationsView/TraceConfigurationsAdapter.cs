@@ -16,12 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using Android.Content;
 using Android.Support.V7.Widget;
 using Android.Views;
-using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.UtilityNetworks;
 
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
@@ -31,11 +31,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// </summary>
     internal class TraceConfigurationsAdapter : RecyclerView.Adapter
     {
-        private TraceConfigurationsViewDataSource _dataSource;
+        private readonly ObservableCollection<UtilityNamedTraceConfiguration> _dataSource;
         private readonly Context _context;
         private List<UtilityNamedTraceConfiguration> _shadowList = new List<UtilityNamedTraceConfiguration>();
 
-        internal TraceConfigurationsAdapter(Context context, TraceConfigurationsViewDataSource dataSource)
+        internal TraceConfigurationsAdapter(Context context, ObservableCollection<UtilityNamedTraceConfiguration> dataSource)
         {
             _context = context;
             _dataSource = dataSource;
@@ -80,7 +80,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <inheritdoc />
         public override long GetItemId(int position) => position;
 
-        public event EventHandler<UtilityNamedTraceConfiguration> TraceConfigurationselected;
+        public event EventHandler<UtilityNamedTraceConfiguration> TraceConfigurationSelected;
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position)
         {
@@ -99,7 +99,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private void OnTraceConfigurationClicked(int position)
         {
-            TraceConfigurationselected?.Invoke(this, _shadowList.ElementAt(position));
+            TraceConfigurationSelected?.Invoke(this, _shadowList.ElementAt(position));
         }
     }
 }

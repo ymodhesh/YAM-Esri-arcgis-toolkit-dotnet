@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using Esri.ArcGISRuntime.Mapping;
@@ -26,20 +27,20 @@ using UIKit;
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
-    /// Data source for showing a TraceConfiguration list in a <see cref="UITableView" /> with <see cref="TraceConfigurationselected" /> event.
+    /// Data source for showing a TraceConfiguration list in a <see cref="UITableView" /> with <see cref="TraceConfigurationSelected" /> event.
     /// </summary>
     internal class TraceConfigurationsTableSource : UITableViewSource, INotifyCollectionChanged
     {
-        private readonly TraceConfigurationsViewDataSource _TraceConfigurations;
+        private readonly ObservableCollection<UtilityNamedTraceConfiguration> _traceConfigurations;
 
         internal static readonly NSString CellId = new NSString(nameof(UITableViewCell));
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        public TraceConfigurationsTableSource(TraceConfigurationsViewDataSource dataSource)
+        public TraceConfigurationsTableSource(ObservableCollection<UtilityNamedTraceConfiguration> dataSource)
         {
-            _TraceConfigurations = dataSource;
-            if (_TraceConfigurations is INotifyCollectionChanged incc)
+            _traceConfigurations = dataSource;
+            if (_traceConfigurations is INotifyCollectionChanged incc)
             {
                 var listener = new Internal.WeakEventListener<INotifyCollectionChanged, object, NotifyCollectionChangedEventArgs>(incc);
                 listener.OnEventAction = (instance, source, eventArgs) => CollectionChanged?.Invoke(this, eventArgs);
@@ -50,28 +51,28 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         public override nint RowsInSection(UITableView tableview, nint section)
         {
-            return _TraceConfigurations?.Count() ?? 0;
+            return _traceConfigurations?.Count() ?? 0;
         }
 
         public override UITableViewCell GetCell(UITableView tableView, NSIndexPath indexPath)
         {
-            var TraceConfiguration = _TraceConfigurations.ElementAt(indexPath.Row);
+            var traceConfiguration = _traceConfigurations.ElementAt(indexPath.Row);
             var cell = tableView.DequeueReusableCell(CellId, indexPath);
             if (cell == null)
             {
                 cell = new UITableViewCell(UITableViewCellStyle.Default, CellId);
             }
 
-            cell.TextLabel.Text = TraceConfiguration.Name;
+            cell.TextLabel.Text = traceConfiguration.Name;
             return cell;
         }
 
         public override void RowSelected(UITableView tableView, NSIndexPath indexPath)
         {
             tableView.DeselectRow(indexPath, false);
-            TraceConfigurationselected?.Invoke(this, _TraceConfigurations.ElementAt(indexPath.Row));
+            TraceConfigurationSelected?.Invoke(this, _traceConfigurations.ElementAt(indexPath.Row));
         }
 
-        public event EventHandler<UtilityNamedTraceConfiguration> TraceConfigurationselected;
+        public event EventHandler<UtilityNamedTraceConfiguration> TraceConfigurationSelected;
     }
 }

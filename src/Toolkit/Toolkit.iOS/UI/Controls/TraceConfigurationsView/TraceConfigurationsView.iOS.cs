@@ -27,7 +27,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public partial class TraceConfigurationsView
     {
         private UITableView _listView;
-        private UIBarButtonItem _closeButton;
 
         /// <inheritdoc />
         public override void LoadView()
@@ -49,8 +48,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             _listView.RegisterClassForCellReuse(typeof(UITableViewCell), TraceConfigurationsTableSource.CellId);
 
             // Set up the list view source
-            var tableSource = new TraceConfigurationsTableSource(_dataSource);
-            tableSource.TraceConfigurationselected += HandleTraceConfigurationselected;
+            var tableSource = new TraceConfigurationsTableSource(_traceConfigurations);
+            tableSource.TraceConfigurationSelected += OnTraceConfigurationSelected;
             _listView.Source = tableSource;
 
             var listener = new Internal.WeakEventListener<INotifyCollectionChanged, object, NotifyCollectionChangedEventArgs>(tableSource)
@@ -84,6 +83,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             _listView.ReloadData();
         }
 
-        private void HandleTraceConfigurationselected(object sender, UtilityNamedTraceConfiguration TraceConfiguration) => SelectAndNavigateToTraceConfiguration(TraceConfiguration);
+        private void OnTraceConfigurationSelected(object sender, UtilityNamedTraceConfiguration traceConfiguration) => SelectedTraceConfiguration = traceConfiguration;
     }
 }

@@ -53,7 +53,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         {
             _internalListView = new RecyclerView(Context);
             _internalListView.SetLayoutManager(new LinearLayoutManager(Context));
-            _adapter = new TraceConfigurationsAdapter(Context, _dataSource);
+            _adapter = new TraceConfigurationsAdapter(Context, _traceConfigurations);
             _internalListView.SetAdapter(_adapter);
             AddView(_internalListView);
         }
@@ -67,7 +67,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (_adapter != null)
             {
-                _adapter.TraceConfigurationselected += ListView_ItemClick;
+                _adapter.TraceConfigurationSelected += ListView_ItemClick;
             }
         }
 
@@ -80,13 +80,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (_adapter != null)
             {
-                _adapter.TraceConfigurationselected -= ListView_ItemClick;
+                _adapter.TraceConfigurationSelected -= ListView_ItemClick;
             }
         }
 
-        private void ListView_ItemClick(object sender, UtilityNamedTraceConfiguration TraceConfiguration)
+        private void ListView_ItemClick(object sender, UtilityNamedTraceConfiguration traceConfiguration)
         {
-            SelectAndNavigateToTraceConfiguration(TraceConfiguration);
+            SelectedTraceConfiguration = traceConfiguration;
         }
     }
 }
