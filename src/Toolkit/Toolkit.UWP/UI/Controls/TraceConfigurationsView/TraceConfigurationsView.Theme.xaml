@@ -1,22 +1,206 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="using:Esri.ArcGISRuntime.Toolkit.UI.Controls">
-  <Style TargetType="controls:TraceConfigurationsView" >
+  <Style TargetType="controls:TraceConfigurationsView">
+    <Setter Property="TerminalPickerTemplate">
+      <Setter.Value>
+        <ContentControl>
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Select a terminal"
+                       HorizontalAlignment="Stretch"
+                       FontWeight="Bold"
+                       Margin="2"/>
+            <ComboBox ItemsSource="{Binding Element.AssetType.TerminalConfiguration.Terminals}"
+                      SelectedItem="{Binding Element.Terminal, Mode=TwoWay}"
+                      HorizontalAlignment="Stretch"
+                      Margin="2"
+                      Grid.Row="1">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto"/>
+                      <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{Binding Name}"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Stretch"
+                               Margin="2"/>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Stretch"
+                                Margin="2"
+                                Grid.Row="1">
+                      <TextBlock Text="Is Upstream: "/>
+                      <TextBlock Text="{Binding IsUpstreamTerminal}"/>
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Content="Select"
+                    Command="{Binding SelectCommand}"
+                    CommandParameter="{Binding Element}"
+                    HorizontalAlignment="Stretch"
+                    Margin="2"
+                    Grid.Row="2"/>
+          </Grid>
+        </ContentControl>
+      </Setter.Value>
+    </Setter>
     <Setter Property="ItemTemplate">
       <Setter.Value>
         <DataTemplate>
-            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="{Binding Name}"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Stretch"
+                       Margin="2"/>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Stretch"
+                        Margin="2"
+                        Grid.Row="1">
+              <TextBlock Text="Trace Type: "/>
+              <TextBlock Text="{Binding TraceType}"/>
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="ResultItemTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <TextBlock Text="{Binding Function.FunctionType}"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"/>
+              <TextBlock Text="{Binding Function.NetworkAttribute.Name}"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"
+                         Grid.Row="1"/>
+            </Grid>
+            <TextBlock Text="{Binding Result}"
+                       Margin="2"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Stretch"
+                       Grid.Column="1"  />
+          </Grid>
         </DataTemplate>
       </Setter.Value>
     </Setter>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="controls:TraceConfigurationsView">
-            <ListView x:Name="List"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      ScrollViewer.VerticalScrollMode="Enabled"
-                      ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
-                      ItemTemplate="{TemplateBinding ItemTemplate}" />
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  Padding="{TemplateBinding Padding}"
+                  Margin="{TemplateBinding Margin}"
+                  MinWidth="{TemplateBinding MinWidth}"
+                  MaxWidth="{TemplateBinding MaxWidth}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <TextBlock Text="Select a utility network"
+                         Visibility="{Binding ElementName=UtilityNetworkPicker, Path=Visibility}"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"/>
+              <ComboBox x:Name="UtilityNetworkPicker"
+                        Visibility="Collapsed"
+                        ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
+                        ItemTemplate="{TemplateBinding ItemTemplate}"
+                        HorizontalAlignment="Stretch"
+                        Margin="2"
+                        Grid.Row="1"/>
+              <TextBlock Text="Select a trace configuration"
+                         Visibility="{Binding ElementName=TraceConfigurationPicker, Path=Visibility}"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"
+                         Grid.Row="2"/>
+              <ComboBox x:Name="TraceConfigurationPicker"
+                        Visibility="Collapsed"
+                        ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
+                        ItemTemplate="{TemplateBinding ItemTemplate}"
+                        HorizontalAlignment="Stretch"
+                        Margin="2"
+                        Grid.Row="3"/>
+              <ToggleButton x:Name="AddingLocationToggle"
+                            Content="Add Starting Location"
+                            HorizontalAlignment="Stretch"
+                            Margin="2"
+                            Grid.Row="4"/>
+              <Grid Grid.Row="5">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition/>
+                  <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="TraceButton"
+                        Content="Trace"
+                        HorizontalAlignment="Stretch"
+                        Margin="2"/>
+                <Button x:Name="ResetButton"
+                        Content="Reset"
+                        HorizontalAlignment="Stretch"
+                        Margin="2"
+                        Grid.Column="1"/>
+              </Grid>
+              <ProgressBar x:Name="BusyIndicator"
+                           Visibility="Collapsed"
+                           HorizontalAlignment="Stretch"
+                           Margin="2"
+                           Grid.Row="6"/>
+              <TextBlock x:Name="StatusLabel"
+                         Text="{Binding Status}"
+                         TextWrapping="Wrap"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"
+                         Grid.Row="7"/>
+              <TextBlock Text="Trace function results"
+                         Visibility="{Binding ElementName=FunctionResultList, Path=Visibility}"
+                         FontWeight="Bold"
+                         HorizontalAlignment="Stretch"
+                         Margin="2"
+                         Grid.Row="8"/>
+              <ItemsControl x:Name="FunctionResultList"
+                            Visibility="Collapsed"
+                            ItemContainerStyle="{TemplateBinding ResultItemContainerStyle}"
+                            ItemTemplate="{TemplateBinding ResultItemTemplate}"
+                            HorizontalAlignment="Stretch"
+                            Margin="2"
+                            Grid.Row="9"/>
+            </Grid>
+          </Border>
         </ControlTemplate>
       </Setter.Value>
     </Setter>

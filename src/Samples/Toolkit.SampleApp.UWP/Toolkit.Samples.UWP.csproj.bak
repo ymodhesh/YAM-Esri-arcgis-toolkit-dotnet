@@ -160,9 +160,6 @@
     <Compile Include="Samples\SymbolDisplay\SymbolDisplaySample.xaml.cs">
       <DependentUpon>SymbolDisplaySample.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Samples\TraceConfigurationsView\TraceConfigurationsViewSample.xaml.cs">
-      <DependentUpon>TraceConfigurationsViewSample.xaml</DependentUpon>
-    </Compile>
     <Compile Include="WelcomePage.xaml.cs">
       <DependentUpon>WelcomePage.xaml</DependentUpon>
     </Compile>
@@ -241,10 +238,6 @@
     <Page Include="Samples\SymbolDisplay\SymbolDisplaySample.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Samples\TraceConfigurationsView\TraceConfigurationsViewSample.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="WelcomePage.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -7,17 +7,19 @@ using Esri.ArcGISRuntime.UtilityNetworks;
 using System;
 using System.Drawing;
 using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
+using Windows.UI.Popups;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Data;
 
-namespace Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView
+// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
+
+namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.TraceConfigurationsView
 {
     /// <summary>
     /// Interaction logic for TraceConfigurationsViewSample.xaml
     /// </summary>
-    [SampleInfoAttribute(Category = "TraceConfigurationsView", DisplayName = "TraceConfigurationsView - Comprehensive", Description = "Full TraceConfigurationsView scenario")]
-    public partial class TraceConfigurationsViewSample : UserControl
+    public sealed partial class TraceConfigurationsViewSample : Page
     {
         private const string Portal1Item1 = "https://<hostname1>/portal/home/item.html?id=<itemId1>";
         private const string Portal1Item2 = "https://<hostname1>/portal/home/item.html?id=<itemId2>";
@@ -35,6 +37,8 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView
 
         private async void Initialize()
         {
+            string content = null;
+            string title = null;
             try
             {
 
@@ -48,7 +52,13 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Initializing sample failed: {ex.Message}", ex.GetType().Name);
+                title = ex.GetType().Name;
+                content = $"Initializing sample failed: {ex.Message}";
+            }
+
+            if (!string.IsNullOrEmpty(title) && !string.IsNullOrEmpty(content))
+            {
+                await new MessageDialog(content, title).ShowAsync();
             }
         }
 
@@ -168,37 +178,37 @@ namespace Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView
             SubscribeToEvents();
         }
 
-        private void OnUtilityNetworkChanged(object sender, UI.Controls.UtilityNetworkChangedEventArgs e)
+        private async void OnUtilityNetworkChanged(object sender, UI.Controls.UtilityNetworkChangedEventArgs e)
         {
             if (e.UtilityNetwork != null)
             {
-                MessageBox.Show($"'{e.UtilityNetwork.Name}' is selected.", "UtilityNetworkChanged");
+                await new MessageDialog($"'{e.UtilityNetwork.Name}' is selected.", "UtilityNetworkChanged").ShowAsync();
             }
             else
             {
-                MessageBox.Show("UtilityNetwork was cleared.", "UtilityNetworkChanged");
+                await new MessageDialog("UtilityNetwork was cleared.", "UtilityNetworkChanged").ShowAsync();
             }
         }
 
-        private void OnTraceConfigurationsChanged(object sender, UI.Controls.TraceConfigurationsChangedEventArgs e)
+        private async void OnTraceConfigurationsChanged(object sender, UI.Controls.TraceConfigurationsChangedEventArgs e)
         {
-            MessageBox.Show($"'{e.TraceConfigurations.Count()}' trace configuration(s) found.", "TraceConfigurationsChanged");
+            await new MessageDialog($"'{e.TraceConfigurations.Count()}' trace configuration(s) found.", "TraceConfigurationsChanged").ShowAsync();
         }
 
-        private void OnTraceLocationTapped(object sender, UI.Controls.TraceLocationTappedEventArgs e)
+        private async void OnTraceLocationTapped(object sender, UI.Controls.TraceLocationTappedEventArgs e)
         {
-            MessageBox.Show($"'{e.TraceLocation.AssetGroup.Name}' trace location is tapped.", "TraceLocationTappedEventArgs");
+            await new MessageDialog($"'{e.TraceLocation.AssetGroup.Name}' trace location is tapped.", "TraceLocationTapped").ShowAsync();
         }
 
-        private void OnTraceCompleted(object sender, UI.Controls.TraceCompletedEventArgs e)
+        private async void OnTraceCompleted(object sender, UI.Controls.TraceCompletedEventArgs e)
         {
             if (e.Error is Exception error)
             {
-                MessageBox.Show(error.Message, error.GetType().Name);
+                await new MessageDialog(error.Message, error.GetType().Name).ShowAsync();
             }
             else
             {
-                MessageBox.Show($"'{e.Results.Count()}' result(s) returned.", "TraceCompleted");
+                await new MessageDialog($"'{e.Results.Count()}' result(s) returned.", "TraceCompleted").ShowAsync();
             }
         }
 

@@ -1,24 +1,25 @@
-﻿<UserControl x:Class="Esri.ArcGISRuntime.Toolkit.Samples.TraceConfigurationsView.TraceConfigurationsViewSample"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
-             xmlns:controls="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls;assembly=Esri.ArcGISRuntime.Toolkit"
-             mc:Ignorable="d"
-             d:DesignHeight="450"
-             d:DesignWidth="800">
-    <UserControl.Resources>
+﻿<Page x:Class="Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.TraceConfigurationsView.TraceConfigurationsViewSample"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:esri="using:Esri.ArcGISRuntime.UI.Controls"
+      xmlns:mapping="using:Esri.ArcGISRuntime.Mapping"
+      xmlns:toolkit="using:Esri.ArcGISRuntime.Toolkit.UI.Controls"
+      mc:Ignorable="d"
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Page.Resources>
         <DataTemplate x:Key="ItemTemplateOne">
             <TextBlock Text="{Binding Name}"
                        HorizontalAlignment="Center"
                        Foreground="Red" />
         </DataTemplate>
         <DataTemplate x:Key="ItemTemplateTwo">
-            <TextBlock Background="Red"
-                       Foreground="White"
-                       Text="{Binding Name}"
-                       HorizontalAlignment="Center" />
+            <Border Background="Red">
+                <TextBlock        Foreground="White"
+                                  Text="{Binding Name}"
+                                  HorizontalAlignment="Center" />
+            </Border>
         </DataTemplate>
         <DataTemplate x:Key="ResultItemTemplate">
             <StackPanel Orientation="Horizontal">
@@ -54,8 +55,6 @@
                x:Key="AlternateItemContainerStyle">
             <Setter Property="Padding"
                     Value="8" />
-            <Setter Property="Cursor"
-                    Value="Hand" />
             <Setter Property="Background"
                     Value="Transparent" />
             <Setter Property="BorderBrush"
@@ -72,66 +71,23 @@
                     Value="DarkSlateGray" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                    <ControlTemplate TargetType="ComboBox">
                         <Border x:Name="Bd"
                                 Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="true">
+                                BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver"
-                                               Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd"
-                                        Property="Background"
-                                        Value="SlateBlue" />
-                            </MultiTrigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="Selector.IsSelectionActive"
-                                               Value="False" />
-                                    <Condition Property="IsSelected"
-                                               Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd"
-                                        Property="Background"
-                                        Value="SlateBlue" />
-                            </MultiTrigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="Selector.IsSelectionActive"
-                                               Value="True" />
-                                    <Condition Property="IsSelected"
-                                               Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd"
-                                        Property="Background"
-                                        Value="LightGray" />
-                            </MultiTrigger>
-                            <Trigger Property="IsEnabled"
-                                     Value="False">
-                                <Setter TargetName="Bd"
-                                        Property="TextElement.Foreground"
-                                        Value="LightGray" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
         <Style x:Key="ItemsControlStyle"
-               TargetType="{x:Type ItemsControl}">
+               TargetType="ItemsControl">
             <Setter Property="Padding"
                     Value="8" />
-            <Setter Property="Cursor"
-                    Value="Hand" />
             <Setter Property="Background"
                     Value="Transparent" />
             <Setter Property="BorderBrush"
@@ -148,19 +104,18 @@
                     Value="DarkSlateGray" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ItemsControl}">
+                    <ControlTemplate TargetType="ItemsControl">
                         <Border Background="{TemplateBinding Background}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="true">
-                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                Padding="{TemplateBinding Padding}">
+                            <ItemsPresenter />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-    </UserControl.Resources>
+    </Page.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -168,12 +123,12 @@
         </Grid.ColumnDefinitions>
         <esri:SceneView x:Name="MySceneView"
                         Grid.Column="0"
-                        Visibility="Hidden" />
+                        Visibility="Collapsed" />
         <esri:MapView x:Name="MyMapView"
                       Grid.Column="0" />
-        <controls:TraceConfigurationsView x:Name="TraceConfigurationsView"
-                                          Grid.Column="1"
-                                          GeoView="{Binding ElementName=MyMapView}" />
+        <toolkit:TraceConfigurationsView x:Name="TraceConfigurationsView"
+                                         Grid.Column="1"
+                                         GeoView="{Binding ElementName=MyMapView}" />
         <Border Grid.Column="0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
@@ -182,8 +137,7 @@
                 Margin="0,15, 15, 0"
                 Background="White"
                 BorderBrush="Black"
-                BorderThickness="1"
-                Visibility="Collapsed">
+                BorderThickness="1">
             <Border.Resources>
                 <Style TargetType="TextBlock">
                     <Setter Property="FontWeight"
@@ -220,4 +174,4 @@
             </StackPanel>
         </Border>
     </Grid>
-</UserControl>
+</Page>
