@@ -1,0 +1,16 @@
+{
+  "solution": {
+    "path": "Esri.ArcGISRuntime.Toolkit.sln",
+    "projects": [
+      "Samples\\Toolkit.SampleApp.UWP\\Toolkit.Samples.UWP.csproj",
+      "Samples\\Toolkit.SampleApp.WPF\\Toolkit.Samples.WPF.csproj",
+      "Samples\\Toolkit.SampleApp.WPF_Net5\\Toolkit.SampleApp.WPF_Net5.csproj",
+      "Toolkit.Preview\\Toolkit.Preview.UWP\\Esri.ArcGISRuntime.Toolkit.Preview.UWP.shproj",
+      "Toolkit.Preview\\Toolkit.Preview.WPF\\Esri.ArcGISRuntime.Toolkit.Preview.WPF.shproj",
+      "Toolkit.Preview\\Toolkit.Preview\\Esri.ArcGISRuntime.Toolkit.Preview.csproj",
+      "Toolkit\\Toolkit.UWP\\Esri.ArcGISRuntime.Toolkit.UWP.shproj",
+      "Toolkit\\Toolkit.WPF\\Esri.ArcGISRuntime.Toolkit.WPF.shproj",
+      "Toolkit\\Toolkit\\Esri.ArcGISRuntime.Toolkit.csproj"
+    ]
+  }
+}
