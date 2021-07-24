@@ -68,16 +68,12 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.TraceConfigurationsView
             if (!_isSubscribedToEvents)
             {
                 TraceConfigurationsView.UtilityNetworkChanged += OnUtilityNetworkChanged;
-                TraceConfigurationsView.TraceConfigurationsChanged += OnTraceConfigurationsChanged;
-                TraceConfigurationsView.TraceLocationTapped += OnTraceLocationTapped;
                 TraceConfigurationsView.TraceCompleted += OnTraceCompleted;
 
             }
             else
             {
                 TraceConfigurationsView.UtilityNetworkChanged -= OnUtilityNetworkChanged;
-                TraceConfigurationsView.TraceConfigurationsChanged -= OnTraceConfigurationsChanged;
-                TraceConfigurationsView.TraceLocationTapped -= OnTraceLocationTapped;
                 TraceConfigurationsView.TraceCompleted -= OnTraceCompleted;
             }
             _isSubscribedToEvents = !_isSubscribedToEvents;
@@ -190,16 +186,6 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.TraceConfigurationsView
             }
         }
 
-        private async void OnTraceConfigurationsChanged(object sender, UI.Controls.TraceConfigurationsChangedEventArgs e)
-        {
-            await new MessageDialog($"'{e.TraceConfigurations.Count()}' trace configuration(s) found.", "TraceConfigurationsChanged").ShowAsync();
-        }
-
-        private async void OnTraceLocationTapped(object sender, UI.Controls.TraceLocationTappedEventArgs e)
-        {
-            await new MessageDialog($"'{e.TraceLocation.AssetGroup.Name}' trace location is tapped.", "TraceLocationTapped").ShowAsync();
-        }
-
         private async void OnTraceCompleted(object sender, UI.Controls.TraceCompletedEventArgs e)
         {
             if (e.Error is Exception error)
@@ -222,37 +208,46 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.TraceConfigurationsView
 
         private void OnSetItemContainerStyle(object sender, RoutedEventArgs e)
         {
-            if (TraceConfigurationsView.ItemContainerStyle == null && Resources["AlternateItemContainerStyle"] is Style newStyle)
+            if (this.Resources["AlternateItemContainerStyle"] is Style containerStyle)
             {
-                TraceConfigurationsView.ItemContainerStyle = newStyle;
-            }
-            else
-            {
-                TraceConfigurationsView.ItemContainerStyle = null;
+                TraceConfigurationsView.ItemContainerStyle = TraceConfigurationsView.ItemContainerStyle == null ? containerStyle : null;
             }
         }
 
-        private void OnSetTerminalPickerTemplate(object sender, RoutedEventArgs e)
+
+        private void OnSetStartingLocationItemTemplate(object sender, RoutedEventArgs e)
         {
-            if (this.Resources["TerminalPickerTemplate"] is FrameworkElement frameworkElement)
+            if (this.Resources["ResultItemTemplate"] is DataTemplate itemTemplate)
             {
-                TraceConfigurationsView.TerminalPickerTemplate = TraceConfigurationsView.TerminalPickerTemplate == null ? frameworkElement : null;
+                TraceConfigurationsView.StartingLocationItemTemplate = TraceConfigurationsView.StartingLocationItemTemplate == null ? itemTemplate : null;
             }
+
+        }
+
+        private void OnSetStartingLocationContainerStyle(object sender, RoutedEventArgs e)
+        {
+
+            if (this.Resources["ItemsControlStyle"] is Style containerStyle)
+            {
+                TraceConfigurationsView.StartingLocationContainerStyle = TraceConfigurationsView.StartingLocationContainerStyle == null ? containerStyle : null;
+
+            }
+
         }
 
         private void OnSetResultItemTemplate(object sender, RoutedEventArgs e)
         {
-            if (this.Resources["ResultItemTemplate"] is DataTemplate resultItemTemplate)
+            if (this.Resources["ResultItemTemplate"] is DataTemplate itemTemplate)
             {
-                TraceConfigurationsView.ResultItemTemplate = TraceConfigurationsView.ResultItemTemplate == null ? resultItemTemplate : null;
+                TraceConfigurationsView.ResultItemTemplate = TraceConfigurationsView.ResultItemTemplate == null ? itemTemplate : null;
             }
         }
 
         private void OnSetResultItemContainerStyle(object sender, RoutedEventArgs e)
         {
-            if (this.Resources["ItemsControlStyle"] is Style newStyle)
+            if (this.Resources["ItemsControlStyle"] is Style containerStyle)
             {
-                TraceConfigurationsView.ResultItemContainerStyle = TraceConfigurationsView.ResultItemContainerStyle == null ? newStyle : null;
+                TraceConfigurationsView.ResultItemContainerStyle = TraceConfigurationsView.ResultItemContainerStyle == null ? containerStyle : null;
             }
         }
     }

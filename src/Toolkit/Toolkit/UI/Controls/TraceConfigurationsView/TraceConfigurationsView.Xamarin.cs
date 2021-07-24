@@ -17,7 +17,9 @@
 #if XAMARIN
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI.Controls;
@@ -59,6 +61,22 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
+        private IList<ArcGISFeature> _startingLocations;
+
+        private IList<ArcGISFeature> StartingLocationsImpl
+        {
+            get => _startingLocations;
+            set
+            {
+                if (_startingLocations != value)
+                {
+                    var oldStartingLocations = _startingLocations;
+                    _startingLocations = value;
+                    UpdateStartingLocations(oldStartingLocations, _startingLocations);
+                }
+            }
+        }
+
         private bool _autoZoomToTraceResults = true;
 
         private bool AutoZoomToTraceResultsImpl
@@ -77,7 +95,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 if (_startingLocationSymbol != value)
                 {
                     _startingLocationSymbol = value;
-                    UpdateTraceLocationSymbol(_startingLocationSymbol);
+                    UpdateStartingLocationSymbol(_startingLocationSymbol);
                 }
             }
         }
@@ -136,4 +154,5 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
     }
 }
+
 #endif

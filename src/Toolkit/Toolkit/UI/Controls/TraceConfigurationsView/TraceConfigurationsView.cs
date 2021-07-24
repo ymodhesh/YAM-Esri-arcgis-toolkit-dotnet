@@ -34,10 +34,13 @@ using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
 using Esri.ArcGISRuntime.UtilityNetworks;
 using Symbol = Esri.ArcGISRuntime.Symbology.Symbol;
+
 #if NETFX_CORE
 using Windows.UI.Xaml.Controls;
 #elif __IOS__
+
 using Control = UIKit.UIViewController;
+
 #elif __ANDROID__
 using Android.App;
 using Android.Views;
@@ -49,29 +52,41 @@ using System.Windows.Controls;
 namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 {
     /// <summary>
-    /// Represents a control that enables a user to select a <see cref="UtilityNamedTraceConfiguration"/> to perform a trace.
+    /// Represents a control that enables a user to view and trace with a <see cref="UtilityNamedTraceConfiguration"/>.
     /// </summary>
     public partial class TraceConfigurationsView : Control
     {
-        private readonly ObservableCollection<UtilityNetwork> _utilityNetworks = new ObservableCollection<UtilityNetwork>();
-        private readonly ObservableCollection<UtilityNamedTraceConfiguration> _traceConfigurations = new ObservableCollection<UtilityNamedTraceConfiguration>();
-        private readonly ObservableCollection<UtilityTraceFunctionOutput> _traceFunctionResults = new ObservableCollection<UtilityTraceFunctionOutput>();
+        private readonly ObservableCollection<UtilityNetwork> _utilityNetworks
+            = new ObservableCollection<UtilityNetwork>();
 
-        private readonly List<UtilityElement> _startingLocations = new List<UtilityElement>();
+        private readonly ObservableCollection<UtilityNamedTraceConfiguration> _traceConfigurations
+            = new ObservableCollection<UtilityNamedTraceConfiguration>();
 
-        private readonly Symbol _defaultStartingLocationSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Cross, Color.LimeGreen, 20d);
-        private readonly Symbol _defaultResultPointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.Blue, 20d);
-        private readonly Symbol _defaultResultLineSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Dot, Color.Blue, 5d);
-        private readonly Symbol _defaultResultFillSymbol = new SimpleFillSymbol(SimpleFillSymbolStyle.ForwardDiagonal, Color.Blue, new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.Blue, 2d));
+        private readonly ObservableCollection<UtilityTraceFunctionOutput> _traceFunctionResults
+            = new ObservableCollection<UtilityTraceFunctionOutput>();
 
-        private readonly GraphicsOverlay _traceLocationsGraphicsOverlay = new GraphicsOverlay();
+        private readonly ObservableCollection<StartingLocationModel> _startingLocationModels
+            = new ObservableCollection<StartingLocationModel>();
+
+        private readonly Symbol _defaultStartingLocationSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Cross,
+            Color.LimeGreen, 20d);
+
+        private readonly Symbol _defaultResultPointSymbol = new SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle,
+            Color.Blue, 20d);
+
+        private readonly Symbol _defaultResultLineSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Dot, Color.Blue,
+            5d);
+
+        private readonly Symbol _defaultResultFillSymbol = new SimpleFillSymbol(SimpleFillSymbolStyle.ForwardDiagonal,
+            Color.Blue, new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.Blue, 2d));
+
+        private readonly GraphicsOverlay _startingLocationsGraphicsOverlay = new GraphicsOverlay();
         private readonly GraphicsOverlay _resultGraphicsOverlay = new GraphicsOverlay();
 
         private SynchronizationContext _synchronizationContext;
 
         /// <summary>
-        /// Gets or sets the <see cref="GeoView"/> that diplays the <see cref="Map"/> or <see cref="Scene"/>, which contains
-        /// one or more <see cref="UtilityNetwork"/>s for which <see cref="UtilityNamedTraceConfiguration"/>s are defined.
+        /// Gets or sets the <see cref="GeoView"/> for which <see cref="UtilityNamedTraceConfiguration"/>s are defined.
         /// </summary>
         public GeoView GeoView
         {
@@ -80,7 +95,16 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to automatically zoom to the extent of the trace result.
+        /// Gets or sets a mutable list of <see cref="ArcGISFeature"/> used as starting locations in a trace.
+        /// </summary>
+        public IList<ArcGISFeature> StartingLocations
+        {
+            get => StartingLocationsImpl;
+            set => StartingLocationsImpl = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to automatically zoom to the trace result area.
         /// </summary>
         public bool AutoZoomToTraceResults
         {
@@ -89,7 +113,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Symbol"/> used by starting locations.
+        /// Gets or sets the <see cref="Symbol"/> for displaying starting locations.
         /// </summary>
         public Symbol StartingLocationSymbol
         {
@@ -98,7 +122,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated multipoint geometry.
+        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated multipoint geometry result.
         /// </summary>
         public Symbol ResultPointSymbol
         {
@@ -107,7 +131,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated polyline geometry.
+        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated polyline geometry result.
         /// </summary>
         public Symbol ResultLineSymbol
         {
@@ -116,7 +140,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated polygon geometry.
+        /// Gets or sets the <see cref="Symbol"/> for displaying aggregated polygon geometry result.
         /// </summary>
         public Symbol ResultFillSymbol
         {
@@ -125,19 +149,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         }
 
         /// <summary>
-        /// Occurs when a <see cref="UtilityNetwork"/> is selected.
+        /// Occurs when a <see cref="UtilityNetwork"/> is changed.
         /// </summary>
         public event EventHandler<UtilityNetworkChangedEventArgs> UtilityNetworkChanged;
-
-        /// <summary>
-        /// Occurs when the collection of <see cref="UtilityNamedTraceConfiguration"/> has changed.
-        /// </summary>
-        public event EventHandler<TraceConfigurationsChangedEventArgs> TraceConfigurationsChanged;
-
-        /// <summary>
-        /// Occurs when a <see cref="UtilityElement"/> is tapped.
-        /// </summary>
-        public event EventHandler<TraceLocationTappedEventArgs> TraceLocationTapped;
 
         /// <summary>
         /// Occurs when <see cref="UtilityNetwork.TraceAsync(UtilityTraceParameters)"/> has completed.
@@ -146,6 +160,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private UtilityNetwork _selectedUtilityNetwork;
 
+        /// <summary>
+        /// Gets or sets the utility network to perform trace analysis.
+        /// </summary>
         private UtilityNetwork SelectedUtilityNetwork
         {
             get => _selectedUtilityNetwork;
@@ -155,7 +172,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     _selectedUtilityNetwork = value;
 
-                    Status = GetStatusBasedOnSelection();
+                    Status = GetCurrentState();
 
                     if (UtilityNetworkChanged != null)
                     {
@@ -169,20 +186,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private UtilityTraceParameters _traceParameters;
 
-        private UtilityTraceParameters TraceParameters
-        {
-            get => _traceParameters;
-            set
-            {
-                if (_traceParameters != value)
-                {
-                    _traceParameters = value;
-                }
-            }
-        }
-
         private UtilityNamedTraceConfiguration _selectedTraceConfiguration;
 
+        /// <summary>
+        /// Gets or sets the trace configuration from which to perform trace analysis.
+        /// </summary>
         private UtilityNamedTraceConfiguration SelectedTraceConfiguration
         {
             get => _selectedTraceConfiguration;
@@ -194,21 +202,25 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
                     if (_selectedTraceConfiguration is UtilityNamedTraceConfiguration namedTraceConfiguration)
                     {
-                        TraceParameters = new UtilityTraceParameters(namedTraceConfiguration, _startingLocations);
+                        _traceParameters = new UtilityTraceParameters(namedTraceConfiguration, _startingLocationList);
                     }
 
-                    Status = GetStatusBasedOnSelection();
+                    Status = GetCurrentState();
                 }
             }
         }
 
-        private string GetStatusBasedOnSelection()
+        /// <summary>
+        /// Gets a description of the current state of the toolkit control.
+        /// </summary>
+        /// <returns>A description of the toolkit control's current state.</returns>
+        private string GetCurrentState()
         {
             var stringBuilder = new StringBuilder();
 
             if (_utilityNetworks.Count == 0)
             {
-                stringBuilder.AppendLine("Loading utility networks...");
+                stringBuilder.AppendLine("Loading the utility networks...");
             }
             else if (SelectedUtilityNetwork == null && _utilityNetworks.Count > 1)
             {
@@ -216,7 +228,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
             else if (_traceConfigurations.Count == 0)
             {
-                stringBuilder.AppendLine("Loading trace configurations...");
+                stringBuilder.AppendLine("Loading the trace configurations...");
             }
             else if (SelectedTraceConfiguration == null && _traceConfigurations.Count > 1)
             {
@@ -224,14 +236,17 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
             else
             {
-                var minimum = SelectedTraceConfiguration == null ? 0 : (SelectedTraceConfiguration.MinimumStartingLocations == UtilityMinimumStartingLocations.Many ? 2 : 1);
+                var minimum = SelectedTraceConfiguration == null ? 0 :
+                    (SelectedTraceConfiguration.MinimumStartingLocations == UtilityMinimumStartingLocations.Many ?
+                    2 : 1);
 
-                if (TraceParameters != null)
+                if (_traceParameters != null)
                 {
-                    stringBuilder.AppendLine($"This '{TraceParameters.TraceType}' trace requires at least '{minimum}' starting location(s).");
+                    stringBuilder.AppendLine($"This '{_traceParameters.TraceType}' trace requires at least '{minimum}'"
+                        + " starting location(s).");
                 }
 
-                if (IsAddingTraceLocation)
+                if (IsAddingStartingLocation)
                 {
                     stringBuilder.AppendLine("Tap a feature to identify a starting location.");
                 }
@@ -240,7 +255,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     stringBuilder.AppendLine("Toggle on 'Add Starting Location' button.");
                 }
 
-                if (minimum > 0 && _startingLocations.Count >= minimum)
+                if (minimum > 0 && _startingLocationList.Count >= minimum)
                 {
                     stringBuilder.AppendLine("Or click 'Trace' button.");
                 }
@@ -251,6 +266,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private string _status;
 
+        /// <summary>
+        /// Gets or sets a value describing status, error or information for this toolkit control.
+        /// </summary>
         private string Status
         {
             get => _status;
@@ -266,6 +284,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private bool _isBusy;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether a value indicating when the control is busy.
+        /// </summary>
         private bool IsBusy
         {
             get => _isBusy;
@@ -281,6 +302,10 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private Action<string> _propertyChangedAction;
 
+        /// <summary>
+        /// Raises a callback to propagate property changes on toolkit control.
+        /// </summary>
+        /// <param name="propertyName">Property with value that changed.</param>
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             RunOnUIThread(() =>
@@ -292,21 +317,28 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             });
         }
 
-        private bool _isAddingTraceLocation;
+        private bool _isAddingStartingLocation;
 
-        private bool IsAddingTraceLocation
+        /// <summary>
+        /// Gets or sets a value indicating whether a value indicating whether to add starting locations interactively.
+        /// </summary>
+        private bool IsAddingStartingLocation
         {
-            get => _isAddingTraceLocation;
+            get => _isAddingStartingLocation;
             set
             {
-                if (_isAddingTraceLocation != value)
+                if (_isAddingStartingLocation != value)
                 {
-                    _isAddingTraceLocation = value;
-                    Status = GetStatusBasedOnSelection();
+                    _isAddingStartingLocation = value;
+                    Status = GetCurrentState();
                 }
             }
         }
 
+        /// <summary>
+        /// Retrieves <see cref="UtilityNamedTraceConfiguration"/> for a <see cref="UtilityNetwork"/>.
+        /// </summary>
+        /// <returns>An asynchronous task representing retrieval of trace configurations.</returns>
         private async Task GetTraceConfigurationsAsync()
         {
             try
@@ -314,7 +346,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 IsBusy = true;
                 _traceConfigurations.Clear();
 
-                if (GeoView is MapView mapView && mapView.Map is Map map && SelectedUtilityNetwork is UtilityNetwork utilityNetwork)
+                if (GeoView is MapView mapView && mapView.Map is Map map &&
+                    SelectedUtilityNetwork is UtilityNetwork utilityNetwork)
                 {
                     var traceConfigurations = await map.GetNamedTraceConfigurationsFromUtilityNetworkAsync(utilityNetwork);
                     foreach (var traceConfiguration in traceConfigurations)
@@ -329,7 +362,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 }
                 else
                 {
-                    Status = GetStatusBasedOnSelection();
+                    Status = GetCurrentState();
                 }
             }
             catch (Exception ex)
@@ -340,13 +373,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 IsBusy = false;
             }
-
-            if (TraceConfigurationsChanged != null)
-            {
-                TraceConfigurationsChanged.Invoke(this, new TraceConfigurationsChangedEventArgs(_traceConfigurations));
-            }
         }
 
+        /// <summary>
+        /// Clears the selection and graphics on <see cref="GeoView"/>.
+        /// </summary>
         private void ClearResults()
         {
             _resultGraphicsOverlay.Graphics.Clear();
@@ -364,9 +395,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        private void Reset(bool clearUtilityNetwork = false)
+        /// <summary>
+        /// Resets the control and <see cref="GeoView"/>.
+        /// </summary>
+        /// <param name="clearCache">A value indicating whether to clear cached values for utility networks and trace
+        /// configurations.</param>
+        private void Reset(bool clearCache = false)
         {
-            if (clearUtilityNetwork)
+            if (clearCache)
             {
                 _utilityNetworks.Clear();
                 SelectedUtilityNetwork = null;
@@ -374,15 +410,20 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 SelectedTraceConfiguration = null;
             }
 
-            TraceParameters = null;
-            _startingLocations.Clear();
-            _traceLocationsGraphicsOverlay.Graphics.Clear();
+            _traceParameters = null;
+            _startingLocationList.Clear();
+            _startingLocationModels.Clear();
+            _startingLocationsGraphicsOverlay.Graphics.Clear();
 
             ClearResults();
 
-            Status = GetStatusBasedOnSelection();
+            Status = GetCurrentState();
         }
 
+        /// <summary>
+        /// Performs trace analysis using selected utility network, trace configuration and starting locations.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous trace operation.</returns>
         private async Task TraceAsync()
         {
             Exception error = null;
@@ -405,19 +446,15 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     throw new InvalidOperationException("No trace configuration selected.");
                 }
 
-                if (TraceParameters == null)
+                if (_traceParameters.StartingLocations.Count == 0)
                 {
-                    TraceParameters = new UtilityTraceParameters(SelectedTraceConfiguration, _startingLocations);
-                }
-                else if (TraceParameters.StartingLocations.Count == 0)
-                {
-                    foreach (var startingLocation in _startingLocations)
+                    foreach (var startingLocation in _startingLocationList)
                     {
-                        TraceParameters.StartingLocations.Add(startingLocation);
+                        _traceParameters.StartingLocations.Add(startingLocation);
                     }
                 }
 
-                traceResults = await SelectedUtilityNetwork.TraceAsync(TraceParameters);
+                traceResults = await SelectedUtilityNetwork.TraceAsync(_traceParameters);
 
                 Envelope elementExtent = null;
 
@@ -434,7 +471,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                         var features = await SelectedUtilityNetwork.GetFeaturesForElementsAsync(elementTraceResult.Elements);
                         Status = $"Selecting '{features.Count()}' feature(s).";
 
-                        bool getElementExtent = AutoZoomToTraceResults && !traceResults.Any(r => r is UtilityGeometryTraceResult);
+                        bool getElementExtent = AutoZoomToTraceResults &&
+                            !traceResults.Any(r => r is UtilityGeometryTraceResult);
 
                         if (GeoView is MapView mapView && mapView.Map is Map map && map.OperationalLayers != null)
                         {
@@ -456,7 +494,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                                             else
                                             {
                                                 if (elementExtent.SpatialReference?.IsEqual(extent.SpatialReference) == false
-                                                    && GeometryEngine.Project(extent, elementExtent.SpatialReference) is Envelope projectedExtent)
+                                                    && GeometryEngine.Project(extent, elementExtent.SpatialReference)
+                                                    is Envelope projectedExtent)
                                                 {
                                                     extent = projectedExtent;
                                                 }
@@ -529,15 +568,20 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 if (error is Exception traceError)
                 {
-                    TraceCompleted.Invoke(this, new TraceCompletedEventArgs(TraceParameters, traceError));
+                    TraceCompleted.Invoke(this, new TraceCompletedEventArgs(_traceParameters, traceError));
                 }
                 else
                 {
-                    TraceCompleted.Invoke(this, new TraceCompletedEventArgs(TraceParameters, traceResults));
+                    TraceCompleted.Invoke(this, new TraceCompletedEventArgs(_traceParameters, traceResults));
                 }
             }
         }
 
+        /// <summary>
+        /// Recursively gets the <see cref="FeatureLayer"/> from a list of layers or group layers.
+        /// </summary>
+        /// <param name="layers">Layers in <see cref="GeoView"/>.</param>
+        /// <returns>An enumeration of <see cref="FeatureLayer"/> items.</returns>
         private IEnumerable<FeatureLayer> GetFeatureLayer(IEnumerable<Layer> layers)
         {
             foreach (var layer in layers)
@@ -558,6 +602,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private long _propertyChangedCallbackToken = 0;
 #endif
 
+        /// <summary>
+        /// Updates toolkit control based on <see cref="GeoView"/> property.
+        /// </summary>
+        /// <param name="oldGeoView">The old <see cref="GeoView"/>.</param>
+        /// <param name="newGeoView">The new <see cref="GeoView"/>.</param>
         private void UpdateGeoView(GeoView oldGeoView, GeoView newGeoView)
         {
             Reset(true);
@@ -587,7 +636,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 #endif
             if (oldGeoView != null)
             {
-                foreach (var overlay in new[] { _traceLocationsGraphicsOverlay, _resultGraphicsOverlay })
+                foreach (var overlay in new[] { _startingLocationsGraphicsOverlay, _resultGraphicsOverlay })
                 {
                     if (oldGeoView.GraphicsOverlays.Contains(overlay))
                     {
@@ -624,7 +673,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 #endif
             if (newGeoView != null)
             {
-                foreach (var overlay in new[] { _traceLocationsGraphicsOverlay, _resultGraphicsOverlay })
+                foreach (var overlay in new[] { _startingLocationsGraphicsOverlay, _resultGraphicsOverlay })
                 {
                     if (!newGeoView.GraphicsOverlays.Contains(overlay))
                     {
@@ -639,9 +688,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             OnGeoModelChanged(null, null);
         }
 
+        /// <summary>
+        /// Handles <see cref="GeoView.GeoViewTapped"/> event of <see cref="GeoView"/> property.
+        /// </summary>
+        /// <param name="sender">The <see cref="GeoView"/> property.</param>
+        /// <param name="e">The data for <see cref="GeoView.GeoViewTapped"/> event.</param>
         private async void OnGeoViewTapped(object sender, GeoViewInputEventArgs e)
         {
-            if (e.Handled || !IsAddingTraceLocation || SelectedUtilityNetwork == null)
+            if (!IsAddingStartingLocation || SelectedUtilityNetwork == null)
             {
                 return;
             }
@@ -654,45 +708,44 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 if (sender is GeoView geoView)
                 {
                     var identifyResults = await geoView.IdentifyLayersAsync(e.Position, 5d, false);
-                    if (GetFeature(identifyResults) is ArcGISFeature feature && SelectedUtilityNetwork.CreateElement(feature) is UtilityElement element)
+                    foreach (var feature in GetFeature(identifyResults))
                     {
-                        if (element.NetworkSource.SourceType == UtilityNetworkSourceType.Edge && feature.Geometry is Polyline polyline)
+                        if (SelectedUtilityNetwork.CreateElement(feature) is UtilityElement element)
                         {
-                            Status = "Computing fraction along edge...";
-                            if (polyline.HasZ && GeometryEngine.RemoveZ(polyline) is Polyline polyline2d)
+                            if (element.NetworkSource.SourceType == UtilityNetworkSourceType.Edge &&
+                                feature.Geometry is Polyline polyline)
                             {
-                                polyline = polyline2d;
+                                Status = "Computing fraction along edge...";
+                                if (polyline.HasZ && GeometryEngine.RemoveZ(polyline) is Polyline polyline2d)
+                                {
+                                    polyline = polyline2d;
+                                }
+
+                                if (e.Location.SpatialReference.IsEqual(polyline?.SpatialReference) == false
+                                    && GeometryEngine.Project(polyline, e.Location.SpatialReference)
+                                    is Polyline projectedPolyline)
+                                {
+                                    polyline = projectedPolyline;
+                                }
+
+                                if (GeometryEngine.FractionAlong(polyline, e.Location, double.NaN)
+                                    is double fractionAlongEdge && !double.IsNaN(fractionAlongEdge))
+                                {
+                                    element.FractionAlongEdge = fractionAlongEdge;
+                                }
+                            }
+                            else if (element.NetworkSource.SourceType == UtilityNetworkSourceType.Junction &&
+                                element.AssetType?.TerminalConfiguration?.Terminals.Count > 1)
+                            {
+                                element.Terminal = element.AssetType.TerminalConfiguration.Terminals[0];
                             }
 
-                            if (e.Location.SpatialReference.IsEqual(polyline?.SpatialReference) == false
-                                && GeometryEngine.Project(polyline, e.Location.SpatialReference) is Polyline projectedPolyline)
-                            {
-                                polyline = projectedPolyline;
-                            }
-
-                            if (GeometryEngine.FractionAlong(polyline, e.Location, double.NaN) is double fractionAlongEdge
-                                && !double.IsNaN(fractionAlongEdge))
-                            {
-                                element.FractionAlongEdge = fractionAlongEdge;
-                            }
+                            AddStartingLocation(element, feature.Geometry as MapPoint ?? e.Location, displayInfo: true);
                         }
-                        else if (element.NetworkSource.SourceType == UtilityNetworkSourceType.Junction && element.AssetType?.TerminalConfiguration?.Terminals.Count > 1)
-                        {
-                            Status = "Selecting a terminal...";
-                            element = await GetElementWithTerminalAsync(e.Location, element);
-                        }
-
-                        if (TraceLocationTapped != null)
-                        {
-                            TraceLocationTapped.Invoke(this, new TraceLocationTappedEventArgs(element));
-                        }
-
-                        _traceLocationsGraphicsOverlay.Graphics.Add(new Graphic(feature.Geometry as MapPoint ?? e.Location, StartingLocationSymbol ?? _defaultStartingLocationSymbol));
-                        _startingLocations.Add(element);
-
-                        Status = GetStatusBasedOnSelection();
                     }
                 }
+
+                Status = GetCurrentState();
             }
             catch (Exception ex)
             {
@@ -704,33 +757,51 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        private ArcGISFeature GetFeature(IEnumerable<IdentifyLayerResult> layerResults)
+        /// <summary>
+        /// Recursively gets the <see cref="ArcGISFeature"/> from an identify.
+        /// </summary>
+        /// <param name="layerResults">Result for layers or sublayers in <see cref="GeoView"/>.</param>
+        /// <returns>An enumeration of <see cref="ArcGISFeature"/> items.</returns>
+        private IEnumerable<ArcGISFeature> GetFeature(IEnumerable<IdentifyLayerResult> layerResults)
         {
             foreach (var layerResult in layerResults)
             {
-                if (GetFeature(layerResult) is ArcGISFeature element)
+                foreach (var feature in GetFeature(layerResult))
                 {
-                    return element;
+                    yield return feature;
                 }
             }
-
-            return null;
         }
 
-        private ArcGISFeature GetFeature(IdentifyLayerResult layerResult)
+        /// <summary>
+        /// Recursively gets the <see cref="ArcGISFeature"/> from an identify.
+        /// </summary>
+        /// <param name="layerResult">Result for a specific layer in <see cref="GeoView"/>.</param>
+        /// <returns>An enumeration of <see cref="ArcGISFeature"/> items.</returns>
+        private IEnumerable<ArcGISFeature> GetFeature(IdentifyLayerResult layerResult)
         {
             foreach (var geoElement in layerResult.GeoElements)
             {
                 if (geoElement is ArcGISFeature feature)
                 {
-                    return feature;
+                    yield return feature;
                 }
             }
 
-            return GetFeature(layerResult.SublayerResults);
+            foreach (var feature in GetFeature(layerResult.SublayerResults))
+            {
+                yield return feature;
+            }
         }
 
 #if XAMARIN || XAMARIN_FORMS
+
+        /// <summary>
+        /// Handles the <see cref="INotifyPropertyChanged.PropertyChanged"/> event of <see cref="GeoView"/> property.
+        /// </summary>
+        /// <param name="sender">The <see cref="GeoView"/> property.</param>
+        /// <param name="e">The data for <see cref="INotifyPropertyChanged.PropertyChanged"/> event of <see cref="GeoView"/>
+        /// property.</param>
         private void OnGeoViewPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if ((sender is MapView && e.PropertyName == nameof(MapView.Map)) ||
@@ -739,8 +810,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 OnGeoModelChanged(sender, e);
             }
         }
+
 #endif
 
+        /// <summary>
+        /// Handles the update on <see cref="GeoView"/> property's content.
+        /// </summary>
+        /// <param name="sender">The <see cref="GeoView"/> property.</param>
+        /// <param name="e">The data for the changed event of <see cref="GeoView"/> property's content.</param>m>
         private void OnGeoModelChanged(object sender, object e)
         {
             Reset(true);
@@ -762,6 +839,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
+        /// <summary>
+        /// Handles the <see cref="INotifyCollectionChanged.CollectionChanged"/> event of <see cref="GeoView"/>'s content.
+        /// </summary>
+        /// <param name="sender">The <see cref="INotifyCollectionChanged"/> content of <see cref="GeoView"/>
+        /// property.</param>
+        /// <param name="e">The data for <see cref="INotifyCollectionChanged.CollectionChanged"/> event of
+        /// <see cref="GeoView"/>'s content.</param>
         private void OnUtilityNetworkCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             RunOnUIThread(() =>
@@ -794,6 +878,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             });
         }
 
+        /// <summary>
+        /// Handles the <see cref="ILoadable.Loaded"/> event of <see cref="GeoView"/>'s content.
+        /// </summary>
+        /// <param name="sender">The <see cref="ILoadable"/> content of <see cref="GeoView"/> property.</param>
+        /// <param name="e">The data for <see cref="ILoadable.Loaded"/> event of <see cref="GeoView"/>'s content.</param>
         private void OnGeoModelLoaded(object sender, EventArgs e)
         {
             RunOnUIThread(() =>
@@ -803,7 +892,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     IsBusy = true;
                     _utilityNetworks.Clear();
 
-                    var utilityNetworks = (sender is Map map ? map.UtilityNetworks : null) ?? throw new ArgumentException("No UtilityNetworks found.");
+                    var utilityNetworks = (sender is Map map ? map.UtilityNetworks : null) ??
+                    throw new ArgumentException("No UtilityNetworks found.");
 
                     if (utilityNetworks is INotifyCollectionChanged incc)
                     {
@@ -826,7 +916,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     }
                     else
                     {
-                        Status = GetStatusBasedOnSelection();
+                        Status = GetCurrentState();
                     }
                 }
                 catch (Exception ex)
@@ -836,30 +926,257 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             });
         }
 
+        /// <summary>
+        /// Ensures action is invoked on UI thread.
+        /// </summary>
+        /// <param name="action">The action to invoke.</param>
         private void RunOnUIThread(Action action)
         {
             _synchronizationContext?.Post((o) => action?.Invoke(), null);
         }
 
-        private void UpdateTraceLocationSymbol(Symbol symbol)
+        /// <summary>
+        /// Updates starting locations for display and trace analysis.
+        /// </summary>
+        /// <param name="oldStartingLocations">The old <see cref="StartingLocations"/>.</param>
+        /// <param name="newStartingLocations">The new <see cref="StartingLocations"/>.</param>
+        private void UpdateStartingLocations(IList<ArcGISFeature> oldStartingLocations, IList<ArcGISFeature> newStartingLocations)
         {
-            foreach (var graphic in _traceLocationsGraphicsOverlay.Graphics)
+            Reset(true);
+            if (oldStartingLocations is INotifyCollectionChanged oldIncc)
             {
-                graphic.Symbol = symbol;
+                oldIncc.CollectionChanged -= OnStartingLocationsCollectionChanged;
+            }
+
+            if (newStartingLocations is INotifyCollectionChanged newIncc)
+            {
+                newIncc.CollectionChanged -= OnStartingLocationsCollectionChanged;
             }
         }
 
+        private readonly List<UtilityElement> _startingLocationList = new List<UtilityElement>();
+
+        /// <summary>
+        /// Adds starting location for display and trace analysis.
+        /// Optionally, displaying its information on this control.
+        /// </summary>
+        /// <param name="element">A starting location.</param>
+        /// <param name="location"><see cref="MapPoint"/> for the starting location.</param>
+        /// <param name="displayInfo">Indicates whether to display information on this control.</param>
+        private void AddStartingLocation(UtilityElement element, MapPoint location,
+            bool displayInfo = false)
+        {
+            _startingLocationList.Add(element);
+
+            var graphic = new Graphic(location,
+                                StartingLocationSymbol ?? _defaultStartingLocationSymbol);
+            graphic.Attributes["GlobalId"] = element.GlobalId;
+            _startingLocationsGraphicsOverlay.Graphics.Add(graphic);
+
+            if (displayInfo)
+            {
+                var startingLocationModel = new StartingLocationModel(element,
+                   new DelegateCommand((o) =>
+                   {
+                       if (o is UtilityElement elementToSelect)
+                       {
+                           if (_startingLocationsGraphicsOverlay.Graphics.FirstOrDefault(g =>
+                           g.Attributes.ContainsKey("GlobalId") &&
+                           Guid.Equals((Guid)g.Attributes["GlobalId"], elementToSelect.GlobalId))
+                           is Graphic graphicToSelect)
+                           {
+                               _startingLocationsGraphicsOverlay.ClearSelection();
+                               _startingLocationsGraphicsOverlay.SelectGraphics(new[] { graphicToSelect });
+                           }
+                       }
+                   }),
+                   new DelegateCommand((o) =>
+                   {
+                       if (o is UtilityElement elementToDelete)
+                       {
+                           if (_startingLocationsGraphicsOverlay.Graphics.FirstOrDefault(g =>
+                           g.Attributes.ContainsKey("GlobalId") &&
+                           Guid.Equals((Guid)g.Attributes["GlobalId"], elementToDelete.GlobalId))
+                           is Graphic graphicToDelete)
+                           {
+                               _startingLocationsGraphicsOverlay.Graphics.Remove(graphicToDelete);
+                           }
+
+                           if (_startingLocationModels.FirstOrDefault(s => s.Element == elementToDelete)
+                           is StartingLocationModel startingLocationToDelete)
+                           {
+                               _startingLocationModels.Remove(startingLocationToDelete);
+                           }
+                       }
+                   }));
+
+                _startingLocationModels.Add(startingLocationModel);
+            }
+        }
+
+        /// <summary>
+        /// Creates and adds a starting location for display and trace analysis.
+        /// </summary>
+        /// <param name="feature">Feature associated to a starting location element.</param>
+        private void AddStartingLocation(ArcGISFeature feature)
+        {
+            try
+            {
+                Status = "Adding a starting location...";
+                IsBusy = true;
+
+                if (feature == null)
+                {
+                    throw new ArgumentNullException(nameof(feature));
+                }
+
+                MapPoint location = null;
+                if (feature.Geometry is MapPoint mapPoint)
+                {
+                    location = mapPoint;
+                }
+                else if (feature.Geometry is Multipart multipart && multipart.Parts.Count > 0
+                    && multipart.Parts[0].StartPoint is MapPoint startPoint)
+                {
+                    location = startPoint;
+                }
+
+                if (location == null)
+                {
+                    throw new InvalidOperationException("Starting location cannot be determined.");
+                }
+
+                if (SelectedUtilityNetwork == null)
+                {
+                    throw new InvalidOperationException("No utility network is selected.");
+                }
+
+                var element = SelectedUtilityNetwork.CreateElement(feature);
+                AddStartingLocation(element, location);
+            }
+            catch (Exception ex)
+            {
+                Status = $"Adding a starting location failed ({ex.GetType().Name}):{ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Removes a starting location from display and trace analysis.
+        /// </summary>
+        /// <param name="feature">Feature associated to a starting location element.</param>
+        private void RemoveStartingLocation(ArcGISFeature feature)
+        {
+            try
+            {
+                Status = "Removing a starting location...";
+                IsBusy = true;
+
+                if (feature == null)
+                {
+                    throw new ArgumentNullException(nameof(feature));
+                }
+
+                if (SelectedUtilityNetwork == null)
+                {
+                    throw new InvalidOperationException("No utility network is selected.");
+                }
+
+                if (SelectedUtilityNetwork.CreateElement(feature) is UtilityElement elementToRemove)
+                {
+                    if (_startingLocationsGraphicsOverlay.Graphics.FirstOrDefault(g =>
+                    g.Attributes.ContainsKey("GlobalId") &&
+                    Guid.Equals((Guid)g.Attributes["GlobalId"], elementToRemove.GlobalId))
+                    is Graphic graphicToDelete)
+                    {
+                        _startingLocationsGraphicsOverlay.Graphics.Remove(graphicToDelete);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Status = $"Removing a starting location failed ({ex.GetType().Name}):{ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Handles the <see cref="INotifyCollectionChanged.CollectionChanged"/> event of
+        /// <see cref="StartingLocations"/> property.
+        /// </summary>
+        /// <param name="sender">The starting locations collection.</param>
+        /// <param name="e">The data for <see cref="INotifyCollectionChanged.CollectionChanged"/> event of
+        /// <see cref="StartingLocations"/>.</param>
+        private void OnStartingLocationsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            RunOnUIThread(() =>
+            {
+                if (e.Action == NotifyCollectionChangedAction.Reset)
+                {
+                    if (_traceParameters != null)
+                    {
+                        _traceParameters.StartingLocations.Clear();
+                    }
+
+                    _startingLocationsGraphicsOverlay.Graphics.Clear();
+                    _startingLocationList.Clear();
+                }
+
+                if (e.OldItems != null)
+                {
+                    foreach (ArcGISFeature featureToRemove in e.OldItems)
+                    {
+                        RemoveStartingLocation(featureToRemove);
+                    }
+                }
+
+                if (e.NewItems != null)
+                {
+                    foreach (ArcGISFeature featureToAdd in e.NewItems)
+                    {
+                        AddStartingLocation(featureToAdd);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Updates symbology used for displaying starting locations.
+        /// </summary>
+        /// <param name="symbol">Represents a starting location.</param>
+        private void UpdateStartingLocationSymbol(Symbol symbol)
+        {
+            foreach (var startingLocationGraphic in _startingLocationsGraphicsOverlay.Graphics)
+            {
+                startingLocationGraphic.Symbol = symbol;
+            }
+        }
+
+        /// <summary>
+        /// Updates symbology used for displaying aggregated geometry trace results.
+        /// </summary>
+        /// <param name="symbol">Represents an aggregated geometry.</param>
+        /// <param name="geometryType">Geometry type for which to apply the symbol.</param>
         private void UpdateResultSymbol(Symbol symbol, GeometryType geometryType)
         {
-            foreach (var graphic in _resultGraphicsOverlay.Graphics)
+            foreach (var resultGraphic in _resultGraphicsOverlay.Graphics)
             {
-                if (graphic.Geometry?.GeometryType == geometryType)
+                if (resultGraphic.Geometry?.GeometryType == geometryType)
                 {
-                    graphic.Symbol = symbol;
+                    resultGraphic.Symbol = symbol;
                 }
             }
         }
 
+        /// <summary>
+        /// Defines a delegate for invoking a specific action through a command.
+        /// </summary>
         private class DelegateCommand : ICommand
         {
             private readonly Action<object> _onExecute;
@@ -877,17 +1194,24 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             public void Execute(object parameter) => _onExecute?.Invoke(parameter);
         }
 
-        private class TerminalPickerModel
+        /// <summary>
+        /// Defines a model for updating starting locations through this toolkit control.
+        /// </summary>
+        private class StartingLocationModel
         {
-            internal TerminalPickerModel(UtilityElement element, DelegateCommand selectCommand)
+            internal StartingLocationModel(UtilityElement element, DelegateCommand selectCommand,
+                DelegateCommand deleteCommand)
             {
                 Element = element;
                 SelectCommand = selectCommand;
+                DeleteCommand = deleteCommand;
             }
 
             public UtilityElement Element { get; }
 
             public ICommand SelectCommand { get; }
+
+            public ICommand DeleteCommand { get; }
         }
     }
 }

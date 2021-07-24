@@ -182,8 +182,7 @@
                 Margin="0,15, 15, 0"
                 Background="White"
                 BorderBrush="Black"
-                BorderThickness="1"
-                Visibility="Collapsed">
+                BorderThickness="1">
             <Border.Resources>
                 <Style TargetType="TextBlock">
                     <Setter Property="FontWeight"
@@ -211,8 +210,10 @@
                         Click="OnSetItemTemplate" />
                 <Button Content="Set ItemContainerStyle"
                         Click="OnSetItemContainerStyle" />
-                <Button Content="Set TerminalPickerTemplate"
-                        Click="OnSetTerminalPickerTemplate" />
+                <Button Content="Set StartingLocationItemTemplate"
+                        Click="OnSetStartingLocationItemTemplate" />
+                <Button Content="Set StartingLocationContainerStyle"
+                        Click="OnSetStartingLocationContainerStyle" />
                 <Button Content="Set ResultItemTemplate"
                         Click="OnSetResultItemTemplate" />
                 <Button Content="Set ResultItemContainerStyle"

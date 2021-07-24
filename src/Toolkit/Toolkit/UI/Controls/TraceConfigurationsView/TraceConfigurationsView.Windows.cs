@@ -14,14 +14,15 @@
 //  *   limitations under the License.
 //  ******************************************************************************/
 
-using Esri.ArcGISRuntime.UtilityNetworks;
-using Symbol = Esri.ArcGISRuntime.Symbology.Symbol;
 #if !XAMARIN
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Windows.Input;
+using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.UI.Controls;
+using Esri.ArcGISRuntime.UtilityNetworks;
+using Symbol = Esri.ArcGISRuntime.Symbology.Symbol;
 #if NETFX_CORE
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -41,6 +42,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     [TemplatePart(Name = "TraceButton", Type = typeof(Button))]
     [TemplatePart(Name = "BusyIndicator", Type = typeof(ProgressBar))]
     [TemplatePart(Name = "StatusLabel", Type = typeof(TextBlock))]
+    [TemplatePart(Name = "StartingLocationList", Type = typeof(ItemsControl))]
     [TemplatePart(Name = "FunctionResultList", Type = typeof(ItemsControl))]
     public partial class TraceConfigurationsView
     {
@@ -57,6 +59,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private ComboBox _traceConfigurationPicker;
         private ProgressBar _busyIndicator;
         private TextBlock _statusLabel;
+        private ItemsControl _startingLocationModelList;
         private ItemsControl _functionResultList;
 
         /// <summary>
@@ -100,7 +103,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (GetTemplateChild("AddingLocationToggle") is ToggleButton addingLocationToggle)
             {
-                addingLocationToggle.Click += (s, e) => IsAddingTraceLocation = s is ToggleButton tb && tb.IsChecked.HasValue && tb.IsChecked.Value;
+                addingLocationToggle.Click += (s, e) => IsAddingStartingLocation = s is ToggleButton tb && tb.IsChecked.HasValue && tb.IsChecked.Value;
             }
 
             if (GetTemplateChild("ResetButton") is Button resetButton)
@@ -123,6 +126,26 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 _statusLabel = statusLabel;
             }
 
+            if (GetTemplateChild("StartingLocationList") is ItemsControl startingLocationList)
+            {
+                _startingLocationModelList = startingLocationList;
+                _startingLocationModelList.ItemsSource = _startingLocationModels;
+                _startingLocationModels.CollectionChanged += (s, e) =>
+                {
+                    if (_startingLocationModelList != null)
+                    {
+                        _startingLocationModelList.Visibility = _startingLocationModels.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                        if (_startingLocationModelList.Visibility == Visibility.Visible)
+                        {
+                            if (_functionResultList != null)
+                            {
+                                _functionResultList.Visibility = Visibility.Collapsed;
+                            }
+                        }
+                    }
+                };
+            }
+
             if (GetTemplateChild("FunctionResultList") is ItemsControl functionResultList)
             {
                 _functionResultList = functionResultList;
@@ -132,6 +155,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     if (_functionResultList != null)
                     {
                         _functionResultList.Visibility = _traceFunctionResults.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                        if (_functionResultList.Visibility == Visibility.Visible)
+                        {
+                            if (_startingLocationModelList != null)
+                            {
+                                _startingLocationModelList.Visibility = Visibility.Collapsed;
+                            }
+                        }
                     }
                 };
             }
@@ -157,7 +187,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 }
             });
 
-            Status = GetStatusBasedOnSelection();
+            Status = GetCurrentState();
         }
 
         private GeoView GeoViewImpl
@@ -175,6 +205,23 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private static void OnGeoViewPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((TraceConfigurationsView)d).UpdateGeoView(e.OldValue as GeoView, e.NewValue as GeoView);
+        }
+
+        private IList<ArcGISFeature> StartingLocationsImpl
+        {
+            get { return (IList<ArcGISFeature>)GetValue(StartingLocationsProperty); }
+            set { SetValue(StartingLocationsProperty, value); }
+        }
+
+        /// <summary>
+        /// Identifies the <see cref="StartingLocations" /> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty StartingLocationsProperty =
+            DependencyProperty.Register(nameof(StartingLocations), typeof(IList<ArcGISFeature>), typeof(TraceConfigurationsView), new PropertyMetadata(null, OnStartingLocationsPropertyChanged));
+
+        private static void OnStartingLocationsPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            ((TraceConfigurationsView)d).UpdateStartingLocations(e.OldValue as IList<ArcGISFeature>, e.NewValue as IList<ArcGISFeature>);
         }
 
         private bool AutoZoomToTraceResultsImpl
@@ -203,7 +250,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private static void OnStartingLocationSymbolPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            ((TraceConfigurationsView)d).UpdateTraceLocationSymbol(e.NewValue as Symbol);
+            ((TraceConfigurationsView)d).UpdateStartingLocationSymbol(e.NewValue as Symbol);
         }
 
         private Symbol ResultPointSymbolImpl
@@ -257,43 +304,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             ((TraceConfigurationsView)d).UpdateResultSymbol(e.NewValue as Symbol, GeometryType.Polygon);
         }
 
-        private Task<UtilityElement> GetElementWithTerminalAsync(MapPoint location, UtilityElement element)
-        {
-            var tcs = new TaskCompletionSource<UtilityElement>();
-            if (GeoView is GeoView geoView && TerminalPickerTemplate is FrameworkElement terminalPicker)
-            {
-                terminalPicker.DataContext = new TerminalPickerModel(element, new DelegateCommand((o) =>
-                {
-                    if (o is UtilityElement traceLocation)
-                    {
-                        tcs.TrySetResult(traceLocation);
-                    }
-
-                    geoView.DismissCallout();
-                }));
-                geoView.ShowCalloutAt(location, terminalPicker);
-            }
-
-            return tcs.Task;
-        }
-
         /// <summary>
-        /// Gets or sets the item template used to render trace configuration entries in the list.
-        /// </summary>
-        public FrameworkElement TerminalPickerTemplate
-        {
-            get { return (FrameworkElement)GetValue(TerminalPickerTemplateProperty); }
-            set { SetValue(TerminalPickerTemplateProperty, value); }
-        }
-
-        /// <summary>
-        /// Identifies the <see cref="TerminalPickerTemplate"/> dependency property.
-        /// </summary>
-        public static readonly DependencyProperty TerminalPickerTemplateProperty =
-            DependencyProperty.Register(nameof(TerminalPickerTemplate), typeof(FrameworkElement), typeof(TraceConfigurationsView), new PropertyMetadata(null));
-
-        /// <summary>
-        /// Gets or sets the item template used to render trace configuration entries in the list.
+        /// Gets or sets the <see cref="DataTemplate"/> used to display each named trace configuration item.
         /// </summary>
         public DataTemplate ItemTemplate
         {
@@ -308,7 +320,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             DependencyProperty.Register(nameof(ItemTemplate), typeof(DataTemplate), typeof(TraceConfigurationsView), new PropertyMetadata(null));
 
         /// <summary>
-        /// Gets or sets the style used by the list view items in the underlying list view control.
+        /// Gets or sets the <see cref="Style"/> that is applied to the container element generated for each named trace configuration item.
         /// </summary>
         public Style ItemContainerStyle
         {
@@ -323,7 +335,37 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             DependencyProperty.Register(nameof(ItemContainerStyle), typeof(Style), typeof(TraceConfigurationsView), null);
 
         /// <summary>
-        /// Gets or sets the item template used to render trace configuration entries in the list.
+        /// Gets or sets the <see cref="DataTemplate"/> used to display each starting location item.
+        /// </summary>
+        public DataTemplate StartingLocationItemTemplate
+        {
+            get { return (DataTemplate)GetValue(StartingLocationItemTemplateProperty); }
+            set { SetValue(StartingLocationItemTemplateProperty, value); }
+        }
+
+        /// <summary>
+        /// Identifies the <see cref="StartingLocationItemTemplate"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty StartingLocationItemTemplateProperty =
+            DependencyProperty.Register(nameof(StartingLocationItemTemplate), typeof(DataTemplate), typeof(TraceConfigurationsView), new PropertyMetadata(null));
+
+        /// <summary>
+        /// Gets or sets the <see cref="Style"/> that is applied to the container element generated for each starting location.
+        /// </summary>
+        public Style StartingLocationContainerStyle
+        {
+            get { return (Style)GetValue(StartingLocationContainerStyleProperty); }
+            set { SetValue(StartingLocationContainerStyleProperty, value); }
+        }
+
+        /// <summary>
+        /// Identifies the <see cref="StartingLocationContainerStyle"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty StartingLocationContainerStyleProperty =
+            DependencyProperty.Register(nameof(StartingLocationContainerStyle), typeof(Style), typeof(TraceConfigurationsView), null);
+
+        /// <summary>
+        /// Gets or sets the <see cref="DataTemplate"/> used to display each trace function result item.
         /// </summary>
         public DataTemplate ResultItemTemplate
         {
@@ -338,7 +380,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             DependencyProperty.Register(nameof(ResultItemTemplate), typeof(DataTemplate), typeof(TraceConfigurationsView), new PropertyMetadata(null));
 
         /// <summary>
-        /// Gets or sets the style used by the list view items in the underlying list view control.
+        /// Gets or sets the <see cref="Style"/> that is applied to the container element generated for each trace function result item.
         /// </summary>
         public Style ResultItemContainerStyle
         {

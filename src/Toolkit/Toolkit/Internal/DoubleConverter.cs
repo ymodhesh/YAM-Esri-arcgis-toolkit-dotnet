@@ -16,24 +16,20 @@
 
 #if !XAMARIN
 using System;
-using System.Collections;
 #if NETFX_CORE
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
 #else
-using System.Windows;
-using System.Windows.Data;
 using System.Globalization;
+using System.Windows.Data;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.Internal
 {
     /// <summary>
-    /// *FOR INTERNAL USE* Returns visible status for positive boolean, non-null text, enumerable with more than one
-    /// value and opposite state for visibility value.
+    /// *FOR INTERNAL USE* Returns a double for value.
     /// </summary>
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-    public class VisibilityConverter : IValueConverter
+    public class DoubleConverter : IValueConverter
     {
         /// <inheritdoc />
         object IValueConverter.Convert(object value, Type targetType, object parameter,
@@ -43,35 +39,12 @@ namespace Esri.ArcGISRuntime.Toolkit.Internal
             CultureInfo culture)
 #endif
         {
-            bool isVisible = value != null;
-
-            if (value is bool)
+            if (value is string doubleValueStr && double.TryParse(doubleValueStr, out double doubleValue))
             {
-                isVisible = (bool)value;
-            }
-            else if (value is string)
-            {
-                isVisible = !string.IsNullOrWhiteSpace((string)value);
-            }
-            else if (value is IEnumerable enumerable)
-            {
-                isVisible = false;
-                int i = 0;
-                foreach (object item in enumerable)
-                {
-                    if (i > 1)
-                    {
-                        isVisible = true;
-                        break;
-                    }
-
-                    i++;
-                }
+                return doubleValue;
             }
 
-            isVisible = parameter?.ToString() == "Reverse" ? !isVisible : isVisible;
-
-            return isVisible ? Visibility.Visible : Visibility.Collapsed;
+            return value;
         }
 
         /// <inheritdoc />
