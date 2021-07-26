@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,7 +48,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private ArcGISPortal? _portal;
         private ArcGISPortal? _bakedInPortal;
 
-        private readonly PinnableCollection<BasemapGalleryItem> _galleryItems = new PinnableCollection<BasemapGalleryItem>();
+        private readonly ObservableCollection<BasemapGalleryItem> _galleryItems = new ObservableCollection<BasemapGalleryItem>();
 #if NETFX_CORE
         private long _propertyChangedCallbackToken;
 #endif
@@ -64,7 +65,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Gets the collection of items to display.
         /// </summary>
-        public PinnableCollection<BasemapGalleryItem> Basemaps => _galleryItems;
+        public ObservableCollection<BasemapGalleryItem> Basemaps => _galleryItems;
 
         /// <summary>
         /// Gets or sets the portal used to populate the list.
@@ -198,7 +199,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (basemapFromView == null)
             {
-                _galleryItems.PinnedItem = null;
                 SelectedBasemap = null;
                 return;
             }
@@ -206,17 +206,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             BasemapGalleryItem itemForBasemap = new BasemapGalleryItem(basemapFromView);
 
             // If current map/scene basemap is in collection, select it
-            if (_galleryItems.Contains(itemForBasemap, false))
+            if (_galleryItems.Contains(itemForBasemap))
             {
-                _galleryItems.PinnedItem = null;
                 SelectedBasemap = itemForBasemap;
-            }
-            else
-            {
-                // If current basemap isn't in collection, pin it
-                itemForBasemap.IsPinned = true;
-                _galleryItems.PinnedItem = itemForBasemap;
-                SelectedBasemap = null;
             }
         }
 
@@ -272,38 +264,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                     return;
                 }
 
-                // Workaround for annoying Forms UWP listview binding behavior
-                if (_galleryItems.UpdatingCollectionFlag)
-                {
-                    return;
-                }
-
                 if (_selectedBasemap != value)
                 {
-                    // Skip update, do not show pinned basemaps as selected
-                    if (value == _galleryItems.PinnedItem)
-                    {
-                        if (_selectedBasemap != null){ _selectedBasemap.IsSelected = false; }
-                        _selectedBasemap = null;
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
-                        return;
-                    }
-
                     if (_selectedBasemap != null) {_selectedBasemap.IsSelected = false; }
                     _selectedBasemap = value;
                     if (_selectedBasemap != null) {_selectedBasemap.IsSelected = true; }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
-
-                    // Pinned item always comes from map or scene, so no need to update if they already match.
-                    if (_selectedBasemap == _galleryItems.PinnedItem)
-                    {
-                        return;
-                    }
-                    else if (_selectedBasemap != null && _galleryItems.PinnedItem != null)
-                    {
-                        _galleryItems.PinnedItem.IsSelected = false;
-                        _galleryItems.PinnedItem = null;
-                    }
 
                     if (_selectedBasemap?.Basemap != null && GeoView is MapView mv)
                     {
@@ -355,7 +321,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             var basemaps = await getBasemapsTask;
 
             _galleryItems.Clear();
-            _galleryItems.AddRange(basemaps.Select(basemap => new BasemapGalleryItem(basemap)));
+            foreach(var item in basemaps)
+            {
+                _galleryItems.Add(new BasemapGalleryItem(item));
+            }
+
+            SelectForCurrentBasemapAfterGalleryChange();
         }
 
         private async Task ConfigureFromDefaultList()
@@ -380,7 +351,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             _galleryItems.Clear();
 
-            _galleryItems.AddRange(results.Results.Select(res => new BasemapGalleryItem(new Basemap(res))));
+            foreach(var item in results.Results)
+            {
+                _galleryItems.Add(new BasemapGalleryItem(new Basemap(item)));
+            }
+
+            SelectForCurrentBasemapAfterGalleryChange();
         }
 
         private void HandleSpatialReferenceChanged(BasemapGalleryItem? inputItem = null)
@@ -403,6 +379,25 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private void Geoview_SpatialReferenceChanged(object? sender, EventArgs? e) =>
             HandleSpatialReferenceChanged();
+
+        private void SelectForCurrentBasemapAfterGalleryChange()
+        {
+            BasemapGalleryItem? currentItem = null;
+            if (GeoView is MapView mv && mv.Map?.Basemap is Basemap mapBM)
+            {
+                currentItem = new BasemapGalleryItem(mapBM);
+            }
+            else if (GeoView is SceneView sv && sv.Scene?.Basemap is Basemap sceneBM)
+            {
+                currentItem = new BasemapGalleryItem(sceneBM);
+            }
+
+            if (_galleryItems.FirstOrDefault(gItem => gItem.Equals(currentItem)) is BasemapGalleryItem activeBasemapItem)
+            {
+                SelectedBasemap = activeBasemapItem;
+                activeBasemapItem.IsSelected = true;
+            }
+        }
 
         /// <summary>
         /// Adds the specified item to the gallery.
