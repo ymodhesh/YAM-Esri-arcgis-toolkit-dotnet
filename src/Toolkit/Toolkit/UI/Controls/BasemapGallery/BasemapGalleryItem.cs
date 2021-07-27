@@ -40,7 +40,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public class BasemapGalleryItem : INotifyPropertyChanged, IEquatable<BasemapGalleryItem>
     {
         private RuntimeImage? _thumbnailOverride;
-        #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
+        #if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
         private ImageSource? _thumbnailImageSource;
         #endif
         private string? _tooltipOverride;
@@ -98,7 +98,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 {
                     #if XAMARIN_FORMS
                     ThumbnailImageSource = await Esri.ArcGISRuntime.Xamarin.Forms.RuntimeImageExtensions.ToImageSourceAsync(Thumbnail);
-                    #elif !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
+                    #elif !__IOS__ && !__ANDROID__
                     ThumbnailImageSource = await Thumbnail.ToImageSourceAsync();
                     #endif
                 }
@@ -266,7 +266,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        #if !_XAMARIN_IOS_ && !_XAMARIN_ANDROID_
+        #if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
         /// <summary>
         /// Gets the thumbnail in a format that is easily displayable in a view.
         /// </summary>
