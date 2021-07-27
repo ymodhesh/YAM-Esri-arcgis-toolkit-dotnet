@@ -48,55 +48,34 @@ namespace Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.BasemapGallery
             }
         }
 
-        private void Button_Load_Map_WM(object sender, RoutedEventArgs e)
+
+        private void Button_Select_Map(object sender, RoutedEventArgs e)
         {
+            Gallery.GeoView = MyMapView;
             MyMapView.Visibility = Visibility.Visible;
             MySceneView.Visibility = Visibility.Collapsed;
-            MySceneViewWG.Visibility = Visibility.Collapsed;
-            Gallery.GeoView = MyMapView;
+
+        }
+
+        private void Button_Select_Scene(object sender, RoutedEventArgs e)
+        {
+            Gallery.GeoView = MySceneView;
+            MySceneView.Visibility = Visibility.Visible;
+            MyMapView.Visibility = Visibility.Collapsed;
+        }
+
+        private void Button_Load_Map_WM(object sender, RoutedEventArgs e)
+        {
             MyMapView.Map = new Map(SpatialReferences.WebMercator);
         }
-        private void Button_Load_Scene_WM(object sender, RoutedEventArgs e)
+        private void Button_Load_Scene(object sender, RoutedEventArgs e)
         {
-            MyMapView.Visibility = Visibility.Collapsed;
-            MySceneView.Visibility = Visibility.Visible;
-            MySceneViewWG.Visibility = Visibility.Collapsed;
-            Gallery.GeoView = MySceneView;
             MySceneView.Scene = new Scene(BasemapStyle.ArcGISImagery);
         }
         private void Button_Load_Map_WGS(object sender, RoutedEventArgs e)
         {
-            MyMapView.Visibility = Visibility.Visible;
-            MySceneView.Visibility = Visibility.Collapsed;
-            MySceneViewWG.Visibility = Visibility.Collapsed;
-            Gallery.GeoView = MyMapView;
             MyMapView.Map = new Map(SpatialReferences.Wgs84);
         }
-        private void Button_Load_Scene_WGS(object sender, RoutedEventArgs e)
-        {
-            MyMapView.Visibility = Visibility.Collapsed;
-            MySceneView.Visibility = Visibility.Collapsed;
-            MySceneViewWG.Visibility = Visibility.Visible;
-            Gallery.GeoView = MySceneViewWG;
-            MySceneViewWG.Scene = new Scene(SceneViewTilingScheme.Geographic);
-        }
-        private void Button_Load_Map_Null(object sender, RoutedEventArgs e)
-        {
-            MyMapView.Visibility = Visibility.Visible;
-            MySceneView.Visibility = Visibility.Collapsed;
-            MySceneViewWG.Visibility = Visibility.Collapsed;
-            Gallery.GeoView = MyMapView;
-            MyMapView.Map = null;
-        }
-        private void Button_Load_Scene_Null(object sender, RoutedEventArgs e)
-        {
-            MyMapView.Visibility = Visibility.Collapsed;
-            MySceneView.Visibility = Visibility.Visible;
-            MySceneViewWG.Visibility = Visibility.Collapsed;
-            Gallery.GeoView = MySceneView;
-            MySceneView.Scene = null;
-        }
-
         private void Button_Add_Last(object sender, RoutedEventArgs e)
         {
             BasemapGalleryItem item = new BasemapGalleryItem(new Basemap())

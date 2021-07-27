@@ -16,32 +16,40 @@
         <esri:SceneView x:Name="MySceneViewWG" Visibility="Hidden" />
 
         <Border
+            Width="200"
             Margin="8"
             Padding="8"
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
-            Width="200"
             Background="White">
             <StackPanel>
                 <Label Content="Control Width:" />
-                <Slider Minimum="0" Maximum="1000" Value="200" x:Name="WidthSlider" />
+                <Slider
+                    x:Name="WidthSlider"
+                    Maximum="1000"
+                    Minimum="0"
+                    Value="200" />
                 <Label Content="Width threshold:" />
-                <Slider Minimum="0" Maximum="1000" Value="400" x:Name="ThresholdSlider" />
+                <Slider
+                    x:Name="ThresholdSlider"
+                    Maximum="1000"
+                    Minimum="0"
+                    Value="400" />
                 <Label Content="Gallery View Style: " />
                 <ComboBox x:Name="ViewStyleCombobox" SelectionChanged="ViewStyleCombobox_SelectionChanged" />
+                <Label Content="Attach to:" />
+                <Button Click="Button_Select_Scene" Content="Scene" />
+                <Button Click="Button_Select_Map" Content="Map" />
                 <Label Content="Load a new:" />
-                <Button Content="Scene in WebMercator" Click="Button_Load_Scene_WM" />
-                <Button Content="Map in WebMercator" Click="Button_Load_Map_WM" />
-                <Button Content="Scene in WGS84" Click="Button_Load_Scene_WGS" />
-                <Button Content="Map in WGS84" Click="Button_Load_Map_WGS" />
-                <Button Content="Null Map" Click="Button_Load_Map_Null" />
-                <Button Content="Null Scene" Click="Button_Load_Scene_Null" />
+                <Button Click="Button_Load_Scene" Content="Scene in WebMercator" />
+                <Button Click="Button_Load_Map_WM" Content="Map in WebMercator" />
+                <Button Click="Button_Load_Map_WGS" Content="Map in WGS84" />
                 <Label Content="Set a new:" />
-                <Button Content="ArcGIS Online" Click="Button_Load_AGOL" />
-                <Button Content="Portal" Click="Button_Load_Portal" />
+                <Button Click="Button_Load_AGOL" Content="ArcGIS Online" />
+                <Button Click="Button_Load_Portal" Content="Portal" />
                 <Label Content="Manipulate list by:" />
-                <Button Content="Adding an Item" Click="Button_Add_Last" />
-                <Button Content="Removing an Item" Click="Button_Remove_Last" />
+                <Button Click="Button_Add_Last" Content="Adding an Item" />
+                <Button Click="Button_Remove_Last" Content="Removing an Item" />
             </StackPanel>
         </Border>
 
@@ -50,9 +58,10 @@
             HorizontalAlignment="Left"
             VerticalAlignment="Bottom"
             Background="White">
-            <controls:BasemapGallery x:Name="Gallery" 
-                                     Width="{Binding ElementName=WidthSlider, Path=Value}" 
-                                     ViewStyleWidthThreshold="{Binding ElementName=ThresholdSlider, Path=Value}" />
+            <controls:BasemapGallery
+                x:Name="Gallery"
+                Width="{Binding ElementName=WidthSlider, Path=Value}"
+                ViewStyleWidthThreshold="{Binding ElementName=ThresholdSlider, Path=Value}" />
         </Border>
     </Grid>
 </UserControl>
