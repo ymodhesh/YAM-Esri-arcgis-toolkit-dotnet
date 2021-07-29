@@ -21,9 +21,9 @@ using System.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
 #else
+using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using System.Globalization;
 #endif
 
 namespace Esri.ArcGISRuntime.Toolkit.Internal
@@ -43,7 +43,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Internal
             CultureInfo culture)
 #endif
         {
-            bool isVisible = value != null;
+            bool isVisible = false;
 
             if (value is bool)
             {
@@ -55,17 +55,15 @@ namespace Esri.ArcGISRuntime.Toolkit.Internal
             }
             else if (value is IEnumerable enumerable)
             {
-                isVisible = false;
                 int i = 0;
                 foreach (object item in enumerable)
-                {
+                { 
+                    i++;
                     if (i > 1)
                     {
                         isVisible = true;
                         break;
                     }
-
-                    i++;
                 }
             }
 

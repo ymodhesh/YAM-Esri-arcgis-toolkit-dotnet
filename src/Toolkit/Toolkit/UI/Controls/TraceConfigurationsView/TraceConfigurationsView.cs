@@ -412,6 +412,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             _traceParameters = null;
             _startingLocationList.Clear();
+            OnPropertyChanged(nameof(CanTrace));
             _startingLocationModels.Clear();
             _startingLocationsGraphicsOverlay.Graphics.Clear();
 
@@ -950,11 +951,22 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (newStartingLocations is INotifyCollectionChanged newIncc)
             {
-                newIncc.CollectionChanged -= OnStartingLocationsCollectionChanged;
+                newIncc.CollectionChanged += OnStartingLocationsCollectionChanged;
             }
         }
 
         private readonly List<UtilityElement> _startingLocationList = new List<UtilityElement>();
+
+        private bool CanTrace
+        {
+            get
+            {
+                var minimum = SelectedTraceConfiguration == null ? 0 :
+                (SelectedTraceConfiguration.MinimumStartingLocations == UtilityMinimumStartingLocations.Many ?
+                2 : 1);
+                return minimum > 0 && _startingLocationList.Count >= minimum;
+            }
+        }
 
         /// <summary>
         /// Adds starting location for display and trace analysis.
@@ -967,6 +979,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             bool displayInfo = false)
         {
             _startingLocationList.Add(element);
+            OnPropertyChanged(nameof(CanTrace));
 
             var graphic = new Graphic(location,
                                 StartingLocationSymbol ?? _defaultStartingLocationSymbol);
@@ -1126,6 +1139,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
                     _startingLocationsGraphicsOverlay.Graphics.Clear();
                     _startingLocationList.Clear();
+                    OnPropertyChanged(nameof(CanTrace));
                 }
 
                 if (e.OldItems != null)

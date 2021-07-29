@@ -58,6 +58,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private ComboBox _utilityNetworkPicker;
         private ComboBox _traceConfigurationPicker;
         private ProgressBar _busyIndicator;
+        private Button _traceButton;
         private TextBlock _statusLabel;
         private ItemsControl _startingLocationModelList;
         private ItemsControl _functionResultList;
@@ -113,7 +114,8 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             if (GetTemplateChild("TraceButton") is Button traceButton)
             {
-                traceButton.Click += (s, e) => _ = TraceAsync();
+                _traceButton = traceButton;
+                _traceButton.Click += (s, e) => _ = TraceAsync();
             }
 
             if (GetTemplateChild("BusyIndicator") is ProgressBar busyIndicator)
@@ -185,6 +187,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                         _statusLabel.Text = Status;
                     }
                 }
+                //else if (propertyName == nameof(CanTrace))
+                //{
+                //    if (_traceButton != null)
+                //    {
+                //        _traceButton.IsEnabled = CanTrace;
+                //    }
+                //}
             });
 
             Status = GetCurrentState();

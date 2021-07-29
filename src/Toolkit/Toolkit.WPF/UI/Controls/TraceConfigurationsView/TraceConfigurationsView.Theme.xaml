@@ -24,29 +24,33 @@
     <Setter Property="ResultItemTemplate">
       <Setter.Value>
         <DataTemplate>
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition />
-              <ColumnDefinition />
-            </Grid.ColumnDefinitions>
-            <Grid>
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-              </Grid.RowDefinitions>
-              <TextBlock Text="{Binding Function.FunctionType}"
-                         FontWeight="Bold"
-                         Margin="2" />
-              <TextBlock Text="{Binding Function.NetworkAttribute.Name}"
-                         FontWeight="Bold"
+          <Border BorderBrush="Black"
+                  BorderThickness="1">
+            <Grid VerticalAlignment="Stretch"
+                  HorizontalAlignment="Stretch">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+              </Grid.ColumnDefinitions>
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="{Binding Function.FunctionType}"
+                           FontWeight="Bold"
+                           Margin="2" />
+                <TextBlock Text="{Binding Function.NetworkAttribute.Name}"
+                           FontWeight="Bold"
+                           Margin="2"
+                           Grid.Row="1" />
+              </Grid>
+              <TextBlock Text="{Binding Result}"
                          Margin="2"
-                         Grid.Row="1" />
+                         VerticalAlignment="Center"
+                         Grid.Column="1" />
             </Grid>
-            <TextBlock Text="{Binding Result}"
-                       Margin="2"
-                       VerticalAlignment="Center"
-                       Grid.Column="1" />
-          </Grid>
+          </Border>
         </DataTemplate>
       </Setter.Value>
     </Setter>
@@ -55,66 +59,60 @@
         <DataTemplate>
           <Border BorderBrush="Black"
                   BorderThickness="1">
-          <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Grid Margin="2">
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-              </Grid.RowDefinitions>
-              <TextBlock Text="{Binding Element.AssetType.Name}"
-                         FontWeight="Bold" />
-              <TextBlock Text="{Binding Element.AssetGroup.Name}"
-                         FontWeight="Medium"
-                         Grid.Row="1" />
-              <TextBlock Text="{Binding Element.NetworkSource.Name}"
-                         Grid.Row="2" />
+            <Grid  VerticalAlignment="Stretch"
+                   HorizontalAlignment="Stretch">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Grid Margin="2">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="{Binding Element.AssetType.Name}"
+                           FontWeight="Bold" />
+                <TextBlock Text="{Binding Element.AssetGroup.Name}"
+                           FontWeight="Medium"
+                           Grid.Row="1" />
+                <TextBlock Text="{Binding Element.NetworkSource.Name}"
+                           Grid.Row="2" />
+              </Grid>
+              <Grid Margin="2"
+                    Grid.Column="1">
+                <Grid.Resources>
+                  <internal:DoubleConverter x:Key="DoubleConverter"/>
+                  <internal:VisibilityConverter x:Key="VisibilityConverter"/>
+                </Grid.Resources>
+                <TextBox Text="{Binding Element.FractionAlongEdge, Mode=TwoWay, Converter={StaticResource DoubleConverter}}"
+                         MinWidth="30" />
+                <ComboBox ItemsSource="{Binding Element.AssetType.TerminalConfiguration.Terminals}"
+                          HorizontalContentAlignment="Stretch"
+                          Visibility="{Binding Element.AssetType.TerminalConfiguration.Terminals, Converter={StaticResource VisibilityConverter}}"
+                          SelectedItem="{Binding Element.Terminal, Mode=TwoWay}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}"
+                                   FontWeight="Bold"
+                                   Margin="2" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </Grid>
+              <Button Content="Select"
+                      Command="{Binding SelectCommand}"
+                      CommandParameter="{Binding Element}"
+                      Margin="2"
+                      Grid.Column="2"/>
+              <Button Content="Delete"
+                      Command="{Binding DeleteCommand}"
+                      CommandParameter="{Binding Element}"
+                      Margin="2"
+                      Grid.Column="3"/>
             </Grid>
-            <Grid Margin="2"
-                  Grid.Column="1">
-              <Grid.Resources>
-                <internal:DoubleConverter x:Key="DoubleConverter"/>
-                <internal:VisibilityConverter x:Key="VisibilityConverter"/>
-              </Grid.Resources>
-              <TextBox Text="{Binding Element.FractionAlongEdge, Mode=TwoWay, Converter={StaticResource DoubleConverter}}"
-                       MinWidth="30" />
-              <ComboBox ItemsSource="{Binding Element.AssetType.TerminalConfiguration.Terminals}"
-                        SelectedItem="{Binding Element.Terminal, Mode=TwoWay, Converter={StaticResource VisibilityConverter}}">
-                <ComboBox.ItemTemplate>
-                  <DataTemplate>
-                    <Grid>
-                      <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                      </Grid.RowDefinitions>
-                      <TextBlock Text="{Binding Name}"
-                                 FontWeight="Bold"
-                                 Margin="2" />
-                      <TextBlock Text="{Binding IsUpstreamTerminal, StringFormat=Is Upstream: {0}}"
-                                 Margin="2"
-                                 Grid.Row="1" />
-                    </Grid>
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </Grid>
-            <Button Content="Select"
-                    Command="{Binding SelectCommand}"
-                    CommandParameter="{Binding Element}"
-                    Margin="2"
-                    Grid.Column="2"/>
-            <Button Content="Delete"
-                    Command="{Binding DeleteCommand}"
-                    CommandParameter="{Binding Element}"
-                    Margin="2"
-                    Grid.Column="3"/>
-          </Grid>
           </Border>
         </DataTemplate>
       </Setter.Value>
@@ -147,6 +145,7 @@
                          FontWeight="Bold"
                          Margin="2" />
               <ComboBox x:Name="UtilityNetworkPicker"
+                        HorizontalContentAlignment="Stretch"
                         Visibility="Collapsed"
                         ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
                         ItemTemplate="{TemplateBinding ItemTemplate}"
@@ -158,6 +157,7 @@
                          Margin="2"
                          Grid.Row="2" />
               <ComboBox x:Name="TraceConfigurationPicker"
+                        HorizontalContentAlignment="Stretch"
                         Visibility="Collapsed"
                         ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
                         ItemTemplate="{TemplateBinding ItemTemplate}"
@@ -194,13 +194,17 @@
                          FontWeight="Bold"
                          Margin="2"
                          Grid.Row="8" />
-              <ListView x:Name="StartingLocationList"
-                        Visibility="Collapsed"
-                        ItemContainerStyle="{TemplateBinding StartingLocationContainerStyle}"
-                        ItemTemplate="{TemplateBinding StartingLocationItemTemplate}"
-                        Margin="2"
-                        Grid.Row="9" />
+              <ItemsControl x:Name="StartingLocationList"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            HorizontalContentAlignment="Stretch"
+                            Visibility="Collapsed"
+                            ItemContainerStyle="{TemplateBinding StartingLocationContainerStyle}"
+                            ItemTemplate="{TemplateBinding StartingLocationItemTemplate}"
+                            Margin="2"
+                            Grid.Row="9" />
               <ItemsControl x:Name="FunctionResultList"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            HorizontalContentAlignment="Stretch"
                             Visibility="Collapsed"
                             ItemContainerStyle="{TemplateBinding ResultItemContainerStyle}"
                             ItemTemplate="{TemplateBinding ResultItemTemplate}"
