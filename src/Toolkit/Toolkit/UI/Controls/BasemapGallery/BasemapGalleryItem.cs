@@ -40,15 +40,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     public class BasemapGalleryItem : INotifyPropertyChanged, IEquatable<BasemapGalleryItem>
     {
         private RuntimeImage? _thumbnailOverride;
-        #if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
+#if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
         private ImageSource? _thumbnailImageSource;
-        #endif
+#endif
         private string? _tooltipOverride;
         private string? _nameOverride;
         private bool _isLoading = false;
         private bool _isValid = true;
-        private bool _isPinned = false;
-        private bool _isSelected = false;
+        private Task? _loadTask;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -57,7 +56,12 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         public BasemapGalleryItem(Basemap basemap)
         {
             Basemap = basemap;
-            _ = LoadBasemapAsync();
+            _loadTask = LoadBasemapAsync();
+        }
+
+        public async Task LoadAsync()
+        {
+            await _loadTask;
         }
 
         private async Task LoadBasemapAsync()
@@ -96,11 +100,11 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
                 if (Thumbnail != null)
                 {
-                    #if XAMARIN_FORMS
+#if XAMARIN_FORMS
                     ThumbnailImageSource = await Esri.ArcGISRuntime.Xamarin.Forms.RuntimeImageExtensions.ToImageSourceAsync(Thumbnail);
-                    #elif !__IOS__ && !__ANDROID__
+#elif !__IOS__ && !__ANDROID__
                     ThumbnailImageSource = await Thumbnail.ToImageSourceAsync();
-                    #endif
+#endif
                 }
             }
             catch (Exception)
@@ -115,11 +119,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         internal async Task NotifySpatialReferenceChanged(SpatialReference? sr)
         {
-            if (_isPinned)
-            {
-                return;
-            }
-
             if (sr == null)
             {
                 IsValid = true;
@@ -151,17 +150,17 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 return true;
             }
 
-            if (other.Basemap?.Item == Basemap?.Item)
+            if (other?.Basemap?.Item?.ItemId != null && other.Basemap?.Item?.ItemId == Basemap?.Item?.ItemId)
             {
                 return true;
             }
 
-            if (other.Basemap?.Name == Basemap?.Name)
+            if (other?.Basemap?.Name == Basemap?.Name)
             {
                 return true;
             }
 
-            if (other.Basemap?.Uri == Basemap?.Uri)
+            if (other?.Basemap?.Uri == Basemap?.Uri)
             {
                 return true;
             }
@@ -183,7 +182,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <inheritdoc />
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return Basemap?.Name?.GetHashCode() ?? -1;
         }
 
         /// <summary>
@@ -191,46 +190,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// </summary>
         public bool IsValid
         {
-            get => _isPinned ? false : _isValid;
+            get => _isValid;
             private set
             {
                 if (_isValid != value)
                 {
                     _isValid = value;
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsValid)));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether this basemap is currently selected.
-        /// </summary>
-        /// <remarks>This is used to implement custom selection behavior on Xamarin.Forms.</remarks>
-        public bool IsSelected
-        {
-            get => _isSelected;
-            internal set
-            {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this item represents a pinned item.
-        /// </summary>
-        public bool IsPinned
-        {
-            get => _isPinned;
-            set
-            {
-                if (_isPinned != value)
-                {
-                    _isPinned = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPinned)));
                 }
             }
         }
@@ -266,7 +232,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
         }
 
-        #if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
+#if XAMARIN_FORMS || (!__IOS__ && !__ANDROID__)
         /// <summary>
         /// Gets the thumbnail in a format that is easily displayable in a view.
         /// </summary>
@@ -279,7 +245,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ThumbnailImageSource)));
             }
         }
-        #endif
+#endif
 
         /// <summary>
         /// Gets or sets the tooltip to display for this basemap item.

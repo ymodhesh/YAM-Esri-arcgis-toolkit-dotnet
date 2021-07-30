@@ -33,19 +33,14 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Internal
             {
                 if (parameter is string statusParameter)
                 {
-                    switch (statusParameter)
+                    return statusParameter switch
                     {
-                        case "Loaded":
-                            return true;
-                        case "NotLoaded":
-                            return false;
-                        case "Loading":
-                            return false;
-                        case "FailedToLoad":
-                            return false;
-                        default:
-                            return true;
-                    }
+                        "Loaded" => true,
+                        "NotLoaded" => false,
+                        "Loading" => false,
+                        "FailedToLoad" => false,
+                        _ => true,
+                    };
                 }
             }
 

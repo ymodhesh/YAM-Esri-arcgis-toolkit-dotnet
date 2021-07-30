@@ -248,26 +248,26 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             {
                 _listViewFromTemplate.ItemContainerStyle = ListItemContainerStyle;
                 _listViewFromTemplate.ItemTemplate = ListItemTemplate;
-                _listViewFromTemplate.ItemsPanel = _listTemplate = _listTemplate ?? GetItemsPanelTemplate(typeof(StackPanel));
+                _listViewFromTemplate.ItemsPanel = _listTemplate ??= GetItemsPanelTemplate(typeof(StackPanel));
             }
             else if (style == BasemapGalleryViewStyle.Grid)
             {
                 _listViewFromTemplate.ItemContainerStyle = GridItemContainerStyle;
                 _listViewFromTemplate.ItemTemplate = GridItemTemplate;
-                _listViewFromTemplate.ItemsPanel = _gridTemplate = _gridTemplate ?? GetItemsPanelTemplate(typeof(WrapPanel));
+                _listViewFromTemplate.ItemsPanel = _gridTemplate ??= GetItemsPanelTemplate(typeof(WrapPanel));
             }
 
             _currentlyAppliedStyle = style;
         }
 
-        #if NETFX_CORE
+#if NETFX_CORE
         // Shim makes cross-platform code easier
         private class WrapPanel
         {
         }
-        #endif
+#endif
 
-        private ItemsPanelTemplate GetItemsPanelTemplate(Type panelType)
+        private static ItemsPanelTemplate GetItemsPanelTemplate(Type panelType)
         {
 #if !NETFX_CORE
             return new ItemsPanelTemplate(new FrameworkElementFactory(panelType));

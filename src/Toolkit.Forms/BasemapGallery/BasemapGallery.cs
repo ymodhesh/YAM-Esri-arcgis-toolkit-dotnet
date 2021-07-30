@@ -15,8 +15,10 @@
 //  ******************************************************************************/
 
 using Esri.ArcGISRuntime.Portal;
-using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using Esri.ArcGISRuntime.Xamarin.Forms;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -31,8 +33,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
     /// </remarks>
     public class BasemapGallery : TemplatedView
     {
-        private CollectionView _presentingView;
-        private readonly BasemapGalleryController _controller = new BasemapGalleryController();
+        private CollectionView? _presentingView;
 
         // Tracks currently-applied layout to avoid unnecessary re-styling of the view
         private int _currentSelectedSpan = 0;
@@ -43,21 +44,16 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         private static readonly ControlTemplate DefaultControlTemplate;
         private static readonly BoolToOpacityConverter OpacityConverter;
 
-        private static readonly TapGestureRecognizer tapGestureRecognizer;
+        private CancellationTokenSource _cancelSource;
 
         static BasemapGallery()
         {
             OpacityConverter = new BoolToOpacityConverter();
-            tapGestureRecognizer = new TapGestureRecognizer();
-            tapGestureRecognizer.NumberOfTapsRequired = 1;
-            tapGestureRecognizer.Tapped += TapGestureRecognizer_Tapped;
 
             DefaultGridDataTemplate = new DataTemplate(() =>
             {
                 Grid outerScrimContainer = new Grid();
                 outerScrimContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = 128 });
-
-                Grid selectionBackground = new Grid { BackgroundColor = Color.Accent };
 
                 StackLayout parentLayout = new StackLayout() { Orientation = StackOrientation.Vertical };
                 parentLayout.Padding = new Thickness(8);
@@ -75,16 +71,12 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 scrimGrid.SetValue(Grid.ColumnSpanProperty, 3);
                 parentLayout.Children.Add(scrimGrid);
 
-                outerScrimContainer.Children.Add(selectionBackground);
                 outerScrimContainer.Children.Add(parentLayout);
                 outerScrimContainer.Children.Add(scrimGrid);
 
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));
                 nameLabel.SetBinding(Label.TextProperty, nameof(BasemapGalleryItem.Name));
                 scrimGrid.SetBinding(OpacityProperty, nameof(BasemapGalleryItem.IsValid), converter: OpacityConverter);
-                selectionBackground.SetBinding(IsVisibleProperty, nameof(BasemapGalleryItem.IsSelected));
-
-                outerScrimContainer.GestureRecognizers.Add(tapGestureRecognizer);
 
                 return outerScrimContainer;
             });
@@ -96,7 +88,6 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
                 parentLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Star });
 
-                Grid selectionBackground = new Grid { BackgroundColor = Color.Accent };
                 Grid imageContainer = new Grid();
                 Image fallback = new Image { WidthRequest = 32, HeightRequest = 32, Aspect = Aspect.AspectFill, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
                 fallback.Source = ImageSource.FromResource("Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Assets.BasemapLight.png", typeof(BasemapGallery).Assembly);
@@ -104,9 +95,6 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 Label nameLabel = new Label { FontSize = 11, TextColor = Color.FromHex("#6e6e6e"), VerticalOptions = LayoutOptions.Center, VerticalTextAlignment = TextAlignment.Center };
                 imageContainer.Children.Add(fallback);
                 imageContainer.Children.Add(thumbnail);
-
-                selectionBackground.SetValue(Grid.ColumnSpanProperty, 3);
-                parentLayout.Children.Add(selectionBackground);
 
                 parentLayout.Children.Add(imageContainer);
                 parentLayout.Children.Add(nameLabel);
@@ -121,27 +109,14 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
                 thumbnail.SetBinding(Image.SourceProperty, nameof(BasemapGalleryItem.ThumbnailImageSource));
                 nameLabel.SetBinding(Label.TextProperty, nameof(BasemapGalleryItem.Name));
                 scrimGrid.SetBinding(OpacityProperty, nameof(BasemapGalleryItem.IsValid), converter: OpacityConverter);
-                selectionBackground.SetBinding(IsVisibleProperty, nameof(BasemapGalleryItem.IsSelected));
-
-                parentLayout.GestureRecognizers.Add(tapGestureRecognizer);
 
                 return parentLayout;
             });
 
             string template = @"<ControlTemplate xmlns=""http://xamarin.com/schemas/2014/forms"" xmlns:x=""http://schemas.microsoft.com/winfx/2009/xaml"" xmlns:esriTK=""clr-namespace:Esri.ArcGISRuntime.Toolkit.Xamarin.Forms"">
-                                    <CollectionView x:Name=""PresentingView"" HorizontalOptions=""FillAndExpand"" VerticalOptions=""FillAndExpand"" SelectionMode=""None"" />
+                                    <CollectionView x:Name=""PresentingView"" HorizontalOptions=""FillAndExpand"" VerticalOptions=""FillAndExpand"" SelectionMode=""Single"" />
                                 </ControlTemplate>";
-            DefaultControlTemplate = Extensions.LoadFromXaml(new ControlTemplate(), template);
-        }
-
-        private static void TapGestureRecognizer_Tapped(object sender, System.EventArgs e)
-        {
-            if (sender is View sendingView && sendingView.BindingContext is BasemapGalleryItem bmgi
-                && !bmgi.IsSelected && bmgi.IsValid
-                && sendingView.Parent.BindingContext is BasemapGalleryController controller)
-            {
-                controller.SelectedBasemap = bmgi;
-            }
+            DefaultControlTemplate = new ControlTemplate().LoadFromXaml(template);
         }
 
         /// <summary>
@@ -152,6 +127,56 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
             ListItemTemplate = DefaultListDataTemplate;
             GridItemTemplate = DefaultGridDataTemplate;
             ControlTemplate = DefaultControlTemplate;
+
+            Controller.PropertyChanged += Controller_PropertyChanged;
+            Controller.Basemaps.CollectionChanged += Basemaps_CollectionChanged;
+        }
+
+        private async void Basemaps_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (_presentingView == null)
+            {
+                return;
+            }
+
+            if (_cancelSource != null)
+            {
+                _cancelSource.Cancel();
+            }
+
+            _cancelSource = new CancellationTokenSource();
+            try
+            {
+                await Task.Delay(1000, _cancelSource.Token);
+                _presentingView.ItemsSource = Controller.Basemaps;
+                if (Controller.SelectedBasemap != null)
+                {
+                    _presentingView.SelectedItem = Controller.Basemaps.FirstOrDefault(bm => bm.Equals(Controller.SelectedBasemap));
+                }
+                else
+                {
+                    _presentingView.SelectedItem = null;
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Ignore
+            }
+        }
+
+        private void Controller_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Controller.SelectedBasemap) && _presentingView is CollectionView listView)
+            {
+                if (Controller.SelectedBasemap != null)
+                {
+                    _presentingView.SelectedItem = Controller.Basemaps.FirstOrDefault(bm => bm.Equals(Controller.SelectedBasemap));
+                }
+                else
+                {
+                    _presentingView.SelectedItem = null;
+                }
+            }
         }
 
         /// <summary>
@@ -161,21 +186,36 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         {
             base.OnApplyTemplate();
 
+            if (_presentingView != null)
+            {
+                _presentingView.SelectionChanged -= _presentingView_SelectionChanged;
+            }
+
             _presentingView = GetTemplateChild("PresentingView") as CollectionView;
 
             if (_presentingView != null)
             {
-                _presentingView.ItemsSource = _controller.Basemaps;
-                _presentingView.BindingContext = _controller;
-                _presentingView.SetBinding(CollectionView.SelectedItemProperty, nameof(_controller.SelectedBasemap), BindingMode.TwoWay);
+                _presentingView.SelectionChanged += _presentingView_SelectionChanged;
                 HandleTemplateChange(Width);
+            }
+        }
+
+        private void _presentingView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection.Count == 0)
+            {
+                Controller.SelectedBasemap = null;
+            }
+            else if (e.CurrentSelection[0] is BasemapGalleryItem currentSelection)
+            {
+                Controller.SelectedBasemap = currentSelection;
             }
         }
 
         /// <summary>
         /// Gets the data source for the gallery.
         /// </summary>
-        public BasemapGalleryController Controller => _controller;
+        public BasemapGalleryController Controller { get; private set; } = new BasemapGalleryController();
 
         /// <summary>
         /// Gets or sets the portal used to populate the basemap list.
@@ -190,29 +230,29 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// Gets or sets the data template used to show basemaps in a list.
         /// </summary>
         /// <seealso cref="GalleryViewStyle"/>
-        public DataTemplate ListItemTemplate
+        public DataTemplate? ListItemTemplate
         {
-            get { return (DataTemplate)GetValue(ListItemTemplateProperty); }
-            set { SetValue(ListItemTemplateProperty, value); }
+            get => GetValue(ListItemTemplateProperty) as DataTemplate;
+            set => SetValue(ListItemTemplateProperty, value);
         }
 
         /// <summary>
         /// Gets or sets the template used to show basemaps in a grid.
         /// </summary>
         /// <seealso cref="GalleryViewStyle"/>
-        public DataTemplate GridItemTemplate
+        public DataTemplate? GridItemTemplate
         {
-            get { return (DataTemplate)GetValue(GridItemTemplateProperty); }
-            set { SetValue(GridItemTemplateProperty, value); }
+            get => GetValue(GridItemTemplateProperty) as DataTemplate;
+            set => SetValue(GridItemTemplateProperty, value);
         }
 
         /// <summary>
         /// Gets or sets the connected GeoView.
         /// </summary>
-        public GeoView GeoView
+        public GeoView? GeoView
         {
-            get { return (GeoView)GetValue(GeoViewProperty); }
-            set { SetValue(GeoViewProperty, value); }
+            get => GetValue(GeoViewProperty) as GeoView;
+            set => SetValue(GeoViewProperty, value);
         }
 
         /// <summary>
@@ -220,8 +260,8 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// </summary>
         public BasemapGalleryViewStyle GalleryViewStyle
         {
-            get { return (BasemapGalleryViewStyle)GetValue(GalleryViewStyleProperty); }
-            set { SetValue(GalleryViewStyleProperty, value); }
+            get => (BasemapGalleryViewStyle)GetValue(GalleryViewStyleProperty);
+            set => SetValue(GalleryViewStyleProperty, value);
         }
 
         /// <summary>
@@ -229,8 +269,8 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// </summary>
         public double ViewStyleWidthThreshold
         {
-            get { return (double)GetValue(ViewStyleWidthThresholdProperty); }
-            set { SetValue(ViewStyleWidthThresholdProperty, value); }
+            get => (double)GetValue(ViewStyleWidthThresholdProperty);
+            set => SetValue(ViewStyleWidthThresholdProperty, value);
         }
 
         /// <summary>
@@ -249,13 +289,13 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// Identifies the <see cref="ListItemTemplate"/> bindable property.
         /// </summary>
         public static readonly BindableProperty ListItemTemplateProperty =
-            BindableProperty.Create(nameof(ListItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), DefaultListDataTemplate, BindingMode.OneWay, null, propertyChanged: ItemTemplateChanged);
+            BindableProperty.Create(nameof(ListItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), null, BindingMode.OneWay, null, propertyChanged: ItemTemplateChanged);
 
         /// <summary>
         /// Identifies the <see cref="GridItemTemplate"/> bindable property.
         /// </summary>
         public static readonly BindableProperty GridItemTemplateProperty =
-            BindableProperty.Create(nameof(GridItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), DefaultGridDataTemplate, BindingMode.OneWay, null, propertyChanged: ItemTemplateChanged);
+            BindableProperty.Create(nameof(GridItemTemplate), typeof(DataTemplate), typeof(BasemapGallery), null, BindingMode.OneWay, null, propertyChanged: ItemTemplateChanged);
 
         /// <summary>
         /// Identifies the <see cref="GalleryViewStyle"/> bindable property.
@@ -273,13 +313,13 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         /// Handles property changes for the <see cref="GeoView" /> bindable property.
         /// </summary>
         private static void GeoViewChanged(BindableObject sender, object oldValue, object newValue) =>
-            ((BasemapGallery)sender)._controller.GeoView = newValue as GeoView;
+            ((BasemapGallery)sender).Controller.GeoView = newValue as GeoView;
 
         /// <summary>
         /// Handles property changes for the <see cref="Portal"/> bindable property.
         /// </summary>
         private static void PortalChanged(BindableObject sender, object oldValue, object newValue) =>
-            ((BasemapGallery)sender)._controller.Portal = newValue as ArcGISPortal;
+            ((BasemapGallery)sender).Controller.Portal = newValue as ArcGISPortal;
 
         /// <summary>
         /// Handles property changes for the bindable properties that can trigger a style or template change.
@@ -306,28 +346,19 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
 
             BasemapGalleryViewStyle styleAfterUpdate = BasemapGalleryViewStyle.Automatic;
             int gridSpanAfterUpdate = 0;
-
-            if (GalleryViewStyle == BasemapGalleryViewStyle.List)
+            switch (GalleryViewStyle)
             {
-                styleAfterUpdate = BasemapGalleryViewStyle.List;
-            }
-            else if (GalleryViewStyle == BasemapGalleryViewStyle.Grid)
-            {
-                styleAfterUpdate = BasemapGalleryViewStyle.Grid;
-            }
-            else if (GalleryViewStyle == BasemapGalleryViewStyle.Automatic)
-            {
-                if (currentWidth >= ViewStyleWidthThreshold)
-                {
-                    styleAfterUpdate = BasemapGalleryViewStyle.Grid;
-                }
-                else
-                {
+                case BasemapGalleryViewStyle.List:
                     styleAfterUpdate = BasemapGalleryViewStyle.List;
-                }
+                    break;
+                case BasemapGalleryViewStyle.Grid:
+                    styleAfterUpdate = BasemapGalleryViewStyle.Grid;
+                    break;
+                case BasemapGalleryViewStyle.Automatic:
+                    styleAfterUpdate = currentWidth >= ViewStyleWidthThreshold ? BasemapGalleryViewStyle.Grid : BasemapGalleryViewStyle.List;
+                    break;
             }
 
-            // Always do list on UWP; there is some sort of bug that causes a crash with grid layout on UWP
             // This check may be removable once UWP collectionview supports dynamic item sizing: https://gist.github.com/hartez/7d0edd4182dbc7de65cebc6c67f72e14
             if (Device.RuntimePlatform == Device.UWP)
             {

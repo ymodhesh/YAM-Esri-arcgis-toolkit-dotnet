@@ -24,8 +24,8 @@ using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Portal;
 #if XAMARIN_FORMS
-using Esri.ArcGISRuntime.Xamarin.Forms;
 using Esri.ArcGISRuntime.Toolkit.Xamarin.Forms.Internal;
+using Esri.ArcGISRuntime.Xamarin.Forms;
 #else
 using Esri.ArcGISRuntime.Toolkit.Internal;
 using Esri.ArcGISRuntime.UI.Controls;
@@ -49,7 +49,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private ArcGISPortal? _bakedInPortal;
 
         private readonly ObservableCollection<BasemapGalleryItem> _galleryItems = new ObservableCollection<BasemapGalleryItem>();
-#if NETFX_CORE
+#if NETFX_CORE && !XAMARIN_FORMS
         private long _propertyChangedCallbackToken;
 #endif
 
@@ -166,7 +166,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         /// <summary>
         /// Maps and scenes start with an empty basemap that should not be shown in the UI.
         /// </summary>
-        private async Task<bool> BasemapIsActuallyNotABasemap(Basemap input)
+        private static async Task<bool> BasemapIsActuallyNotABasemap(Basemap input)
         {
             await input.LoadAsync();
             if (!input.BaseLayers.Any() && !input.ReferenceLayers.Any())
@@ -204,12 +204,20 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             }
 
             BasemapGalleryItem itemForBasemap = new BasemapGalleryItem(basemapFromView);
+            await itemForBasemap.LoadAsync();
 
             // If current map/scene basemap is in collection, select it
             if (_galleryItems.Contains(itemForBasemap))
             {
                 SelectedBasemap = itemForBasemap;
             }
+            else
+            {
+                SelectedBasemap = null;
+            }
+            #if XAMARIN_FORMS
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
+            #endif
         }
 
         private void GeoViewDocumentChanged(object? sender, object? e)
@@ -222,17 +230,21 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             if (_geoview is MapView mv && mv.Map is INotifyPropertyChanged mapINPC)
             {
                 // Listen for load completion
-                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(mapINPC);
-                listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
-                listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
+                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(mapINPC)
+                {
+                    OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs),
+                    OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent,
+                };
                 mapINPC.PropertyChanged += listener.OnEvent;
             }
             else if (_geoview is SceneView sv && sv.Scene is INotifyPropertyChanged sceneINPC)
             {
                 // Listen for load completion
-                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(sceneINPC);
-                listener.OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs);
-                listener.OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent;
+                var listener = new WeakEventListener<INotifyPropertyChanged, object?, PropertyChangedEventArgs>(sceneINPC)
+                {
+                    OnEventAction = (instance, source, eventArgs) => HandleDocPropertyChanged(source, eventArgs),
+                    OnDetachAction = (instance, weakEventListener) => instance.PropertyChanged -= weakEventListener.OnEvent,
+                };
                 sceneINPC.PropertyChanged += listener.OnEvent;
             }
 
@@ -259,16 +271,9 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             set
             {
-                if (value is BasemapGalleryItem newVal && _selectedBasemap is BasemapGalleryItem oldValue && newVal.Equals(oldValue))
+                if (!_selectedBasemap?.Equals(value) ?? _selectedBasemap != value)
                 {
-                    return;
-                }
-
-                if (_selectedBasemap != value)
-                {
-                    if (_selectedBasemap != null) {_selectedBasemap.IsSelected = false; }
                     _selectedBasemap = value;
-                    if (_selectedBasemap != null) {_selectedBasemap.IsSelected = true; }
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedBasemap)));
 
                     if (_selectedBasemap?.Basemap != null && GeoView is MapView mv)
@@ -277,7 +282,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                         {
                             mv.Map = new Map(_selectedBasemap.Basemap.Clone());
                         }
-                        else
+                        else if (mv.Map.Basemap != _selectedBasemap.Basemap)
                         {
                             mv.Map.Basemap = _selectedBasemap.Basemap.Clone();
                         }
@@ -288,7 +293,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                         {
                             sv.Scene = new Scene(_selectedBasemap.Basemap.Clone());
                         }
-                        else
+                        else if (sv.Scene.Basemap != _selectedBasemap.Basemap)
                         {
                             sv.Scene.Basemap = _selectedBasemap.Basemap.Clone();
                         }
@@ -321,12 +326,13 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             var basemaps = await getBasemapsTask;
 
             _galleryItems.Clear();
-            foreach(var item in basemaps)
+            foreach (var item in basemaps)
             {
                 _galleryItems.Add(new BasemapGalleryItem(item));
             }
 
-            SelectForCurrentBasemapAfterGalleryChange();
+            await Task.WhenAll(_galleryItems.Select (gi => gi.LoadAsync()));
+            await HandleMapBasemapChanges();
         }
 
         private async Task ConfigureFromDefaultList()
@@ -351,12 +357,14 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
             _galleryItems.Clear();
 
-            foreach(var item in results.Results)
+            foreach (var item in results.Results)
             {
                 _galleryItems.Add(new BasemapGalleryItem(new Basemap(item)));
             }
 
-            SelectForCurrentBasemapAfterGalleryChange();
+            await Task.WhenAll(_galleryItems.Select (gi => gi.LoadAsync()));
+
+            await HandleMapBasemapChanges();
         }
 
         private void HandleSpatialReferenceChanged(BasemapGalleryItem? inputItem = null)
@@ -379,25 +387,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
 
         private void Geoview_SpatialReferenceChanged(object? sender, EventArgs? e) =>
             HandleSpatialReferenceChanged();
-
-        private void SelectForCurrentBasemapAfterGalleryChange()
-        {
-            BasemapGalleryItem? currentItem = null;
-            if (GeoView is MapView mv && mv.Map?.Basemap is Basemap mapBM)
-            {
-                currentItem = new BasemapGalleryItem(mapBM);
-            }
-            else if (GeoView is SceneView sv && sv.Scene?.Basemap is Basemap sceneBM)
-            {
-                currentItem = new BasemapGalleryItem(sceneBM);
-            }
-
-            if (_galleryItems.FirstOrDefault(gItem => gItem.Equals(currentItem)) is BasemapGalleryItem activeBasemapItem)
-            {
-                SelectedBasemap = activeBasemapItem;
-                activeBasemapItem.IsSelected = true;
-            }
-        }
 
         /// <summary>
         /// Adds the specified item to the gallery.

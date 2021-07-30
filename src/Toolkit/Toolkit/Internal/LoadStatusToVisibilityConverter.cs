@@ -15,9 +15,9 @@
 //  ******************************************************************************/
 
 #if !XAMARIN
-using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 using System;
 using System.Globalization;
+using Esri.ArcGISRuntime.Toolkit.UI.Controls;
 #if NETFX_CORE
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Data;
@@ -46,18 +46,14 @@ namespace Esri.ArcGISRuntime.Toolkit.Internal
             {
                 if (parameter is string statusParameter)
                 {
-                    switch (statusParameter)
+                    return statusParameter switch
                     {
-                        case "Loaded":
-                            return Visibility.Visible;
-                        case "NotLoaded":
-                            return Visibility.Collapsed;
-                        case "Loading":
-                            return Visibility.Collapsed;
-                        case "FailedToLoad":
-                            return Visibility.Collapsed;
-                    }
-                    return true;
+                        "Loaded" => Visibility.Visible,
+                        "NotLoaded" => Visibility.Collapsed,
+                        "Loading" => Visibility.Collapsed,
+                        "FailedToLoad" => Visibility.Collapsed,
+                        _ => true,
+                    };
                 }
             }
 
