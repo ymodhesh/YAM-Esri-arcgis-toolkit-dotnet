@@ -14,11 +14,11 @@
 //  *   limitations under the License.
 //  ******************************************************************************/
 
-using Esri.ArcGISRuntime.Portal;
-using Esri.ArcGISRuntime.Xamarin.Forms;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Esri.ArcGISRuntime.Portal;
+using Esri.ArcGISRuntime.Xamarin.Forms;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -44,7 +44,7 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
         private static readonly ControlTemplate DefaultControlTemplate;
         private static readonly BoolToOpacityConverter OpacityConverter;
 
-        private CancellationTokenSource _cancelSource;
+        private CancellationTokenSource? _cancelSource;
 
         static BasemapGallery()
         {
@@ -188,19 +188,19 @@ namespace Esri.ArcGISRuntime.Toolkit.Xamarin.Forms
 
             if (_presentingView != null)
             {
-                _presentingView.SelectionChanged -= _presentingView_SelectionChanged;
+                _presentingView.SelectionChanged -= PresentingView_SelectionChanged;
             }
 
             _presentingView = GetTemplateChild("PresentingView") as CollectionView;
 
             if (_presentingView != null)
             {
-                _presentingView.SelectionChanged += _presentingView_SelectionChanged;
+                _presentingView.SelectionChanged += PresentingView_SelectionChanged;
                 HandleTemplateChange(Width);
             }
         }
 
-        private void _presentingView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void PresentingView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.CurrentSelection.Count == 0)
             {

@@ -47,7 +47,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
         private string? _nameOverride;
         private bool _isLoading = false;
         private bool _isValid = true;
-        private Task? _loadTask;
+        private readonly Task? _loadTask;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BasemapGalleryItem"/> class.
@@ -59,9 +59,15 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
             _loadTask = LoadBasemapAsync();
         }
 
+        /// <summary>
+        /// Loads the basemap.
+        /// </summary>
         public async Task LoadAsync()
         {
-            await _loadTask;
+            if (_loadTask != null)
+            {
+                await _loadTask;
+            }
         }
 
         private async Task LoadBasemapAsync()

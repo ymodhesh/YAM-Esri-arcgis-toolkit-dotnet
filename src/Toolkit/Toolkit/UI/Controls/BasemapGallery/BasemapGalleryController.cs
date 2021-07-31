@@ -42,7 +42,6 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
     /// </summary>
     public class BasemapGalleryController : INotifyPropertyChanged
     {
-        private const string _portalUri = "a25523e2241d4ff2bcc9182cc971c156";
         private BasemapGalleryItem? _selectedBasemap;
         private GeoView? _geoview;
         private ArcGISPortal? _portal;
@@ -331,7 +330,7 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 _galleryItems.Add(new BasemapGalleryItem(item));
             }
 
-            await Task.WhenAll(_galleryItems.Select (gi => gi.LoadAsync()));
+            await Task.WhenAll(_galleryItems.Select(gi => gi.LoadAsync()));
             await HandleMapBasemapChanges();
         }
 
@@ -342,27 +341,16 @@ namespace Esri.ArcGISRuntime.Toolkit.UI.Controls
                 _bakedInPortal = await ArcGISPortal.CreateAsync();
             }
 
-            PortalGroup group = new PortalGroup(_bakedInPortal, _portalUri);
-
-            await group.LoadAsync();
-
-            if (group.LoadStatus != LoadStatus.Loaded)
-            {
-                return;
-            }
-
-            var searchParameters = PortalGroupContentSearchParameters.CreateForItemsOfType(PortalItemType.WebMap);
-
-            var results = await group.FindItemsAsync(searchParameters);
+            var results = await _bakedInPortal.GetDeveloperBasemapsAsync();
 
             _galleryItems.Clear();
 
-            foreach (var item in results.Results)
+            foreach (var basemap in results)
             {
-                _galleryItems.Add(new BasemapGalleryItem(new Basemap(item)));
+                _galleryItems.Add(new BasemapGalleryItem(basemap));
             }
 
-            await Task.WhenAll(_galleryItems.Select (gi => gi.LoadAsync()));
+            await Task.WhenAll(_galleryItems.Select(gi => gi.LoadAsync()));
 
             await HandleMapBasemapChanges();
         }
