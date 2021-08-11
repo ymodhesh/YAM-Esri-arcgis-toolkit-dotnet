@@ -1,0 +1,84 @@
+﻿<ResourceDictionary
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls">
+
+  <Style TargetType="{x:Type controls:UtilityElementView}" >
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="{x:Type controls:UtilityElementView}">
+          <Border BorderThickness="{TemplateBinding BorderThickness}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  Background="{TemplateBinding Background}">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+              </Grid.ColumnDefinitions>
+              <ContentControl x:Name="LabelControl"
+                              HorizontalContentAlignment="Stretch"
+                              VerticalContentAlignment="Stretch"
+                              Margin="2"/>
+              <ContentControl x:Name="ContentControl"
+                              HorizontalContentAlignment="Stretch"
+                              VerticalContentAlignment="Stretch"
+                              Grid.Column="1"
+                              Margin="2"/>
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="LabelTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition/>
+              <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="{Binding NetworkSource.Name}"
+                       Margin="2"/>
+            <TextBlock Text="{Binding AssetGroup.Name}"
+                       FontWeight="Bold"
+                       Grid.Row="1"
+                       Margin="2"/>
+          </Grid>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="JunctionTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <ComboBox ItemsSource="{Binding AssetType.TerminalConfiguration.Terminals}"
+                    SelectedItem="{Binding Terminal, Mode=TwoWay}"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Stretch"
+                    Margin="2">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="EdgeTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Slider Minimum="0.0"
+                  Maximum="1.0"
+                  TickPlacement="BottomRight"
+                  TickFrequency="0.1"
+                  LargeChange="1"
+                  SmallChange="0.1"
+                  Value="{Binding FractionAlongEdge, Mode=TwoWay}"
+                  VerticalAlignment="Center"
+                  HorizontalAlignment="Stretch"
+                  Margin="2"/>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>
