@@ -1,0 +1,82 @@
+﻿<ResourceDictionary
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:controls="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls">
+
+  <Style TargetType="{x:Type controls:UtilityTraceResultView}" >
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="{x:Type controls:UtilityTraceResultView}">
+          <Border BorderThickness="{TemplateBinding BorderThickness}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  Background="{TemplateBinding Background}">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+              </Grid.RowDefinitions>
+              <TextBlock x:Name="ResultWarnings"
+                         Margin="2"/>
+              <ListView x:Name="ResultList"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Grid.Row="1"
+                        Margin="2"/>
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="ElementTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Border BorderBrush="Black"
+                  BorderThickness="1">
+            <Grid >
+              <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+              </Grid.RowDefinitions>
+              <TextBlock Text="{Binding NetworkSource.Name}"
+                         Margin="2"/>
+              <TextBlock Text="{Binding AssetGroup.Name}"
+                         FontWeight="Bold"
+                         Grid.Row="1"
+                         Margin="2"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+    <Setter Property="FunctionTemplate">
+      <Setter.Value>
+        <DataTemplate>
+          <Border BorderBrush="Black"
+                  BorderThickness="1">
+            <Grid >
+              <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="{Binding Function.FunctionType}"
+                         Margin="2"/>
+              <TextBlock Text="{Binding Function.NetworkAttribute.Name}"
+                         FontWeight="Bold"
+                         Grid.Row="1"
+                         Margin="2"/>
+              <TextBlock Text="{Binding Result}"
+                         VerticalAlignment="Center"
+                         Grid.RowSpan="2"
+                         Grid.Column="1"
+                         Margin="2"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

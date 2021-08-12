@@ -1,0 +1,40 @@
+﻿<Page x:Class="Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.UtilityTraceResultView.UtilityTraceResultViewSample"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:Esri.ArcGISRuntime.Toolkit.SampleApp.Samples.UtilityTraceResultView"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:esri="using:Esri.ArcGISRuntime.UI.Controls"
+      xmlns:toolkit="using:Esri.ArcGISRuntime.Toolkit.UI.Controls"
+      mc:Ignorable="d">
+    <Grid>
+        <esri:MapView x:Name="MyMapView"
+                      GeoViewTapped="OnGeoViewTapped" />
+        <Border BorderThickness="1"
+                BorderBrush="Black"
+                Background="White"
+                Padding="30"
+                Margin="20"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Right"
+                MinWidth="250">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Text="Tap a feature to run a trace"
+                           Margin="10" />
+                <Pivot      Grid.Row="1">
+                    <PivotItem Header="Elements">
+                        <toolkit:UtilityTraceResultView  x:Name="UtilityTraceResultViewForElements" />
+                    </PivotItem>
+                    <PivotItem Header="Functions">
+                        <toolkit:UtilityTraceResultView  x:Name="UtilityTraceResultViewForFunctions" />
+                    </PivotItem>
+                </Pivot>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>
+

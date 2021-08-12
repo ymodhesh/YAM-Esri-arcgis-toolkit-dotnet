@@ -163,6 +163,9 @@
     <Compile Include="Samples\UtilityElementView\UtilityElementViewSample.xaml.cs">
       <DependentUpon>UtilityElementViewSample.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Samples\UtilityTraceResultView\UtilityTraceResultViewSample.xaml.cs">
+      <DependentUpon>UtilityTraceResultViewSample.xaml</DependentUpon>
+    </Compile>
     <Compile Include="WelcomePage.xaml.cs">
       <DependentUpon>WelcomePage.xaml</DependentUpon>
     </Compile>
@@ -243,6 +246,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Samples\UtilityElementView\UtilityElementViewSample.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Samples\UtilityTraceResultView\UtilityTraceResultViewSample.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
